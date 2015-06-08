@@ -7,30 +7,10 @@ take as input:
     the user filtered table
 
 prompt user input:
-    the second level (plotter level) filtering
+    the overlay axis, and the choice of geometric mean
 
-data convertion (from the input table):
-    x axis: 1 from "settings" attri
-    y axis: multiple from [task, run, arch, benchmark, remaining settings]
-    y data: list of high dimensional array([[[]]])
-    y_data[i] & x_data: array([[[]]]): high dimensional array
-    the corresponding name for each axis (e.g.: benchmark = [blif1, blif2, blif3, ... ]) 
-    can be obtained by "SELECT DISTINCT benchmark FROM input_table;"
-    you may transpose the y array axes, so that the param specified by second level filter
-    is the lower dimensions, and you iterate through them to do plots within one plot,
-    the other attributes are higher dimensions, and you create subplots based on them.
-
-    you can easily fill the x_data & y_data[i] by iterating through the input table:
-    first step, build the list for all possible value of all attributes, by "SELECT DISTINCT"
-    then you map each value with an index. 
-    then when you read a line: 
-    some_task | some_run | some_blif | some_fc ... -->
-    i1        | i2       | i3        | i4 ...
-    then you just need to fill x[i1][i2][i3][i4][...] and y[][][][]
-"""
-
-"""
-    data is in the form of [(a,b,c), (a,b,c), ...]: a list of tuples
+input data: 
+    in the form of [(a,b,c), (a,b,c), ...]: a list of tuples
 """
 
 import numpy as np
@@ -49,8 +29,6 @@ import re
     return the object of data_collection
 """
 def data_converter(data_list, x_name, y_name_list, filter_name_list):
-    print data_list[0]
-    print len(data_list[0])
     # just for convenience, support pass in y_name_list as single string or list
     if type(y_name_list) == type("str"):
         y_name_list = [y_name_list]
@@ -59,8 +37,6 @@ def data_converter(data_list, x_name, y_name_list, filter_name_list):
     xy_name_map = ([item for sub in [[x_name], y_name_list] for item in sub],\
                     list(set([tup[0] for tup in data_list])))
     axis_name_supmap = {k:[] for k in filter_name_list}
-    print "f n l", filter_name_list
-    print "filter_name_list, y_name_list", len(filter_name_list), len(y_name_list)
     for i in range(len(filter_name_list)):
         axis_name_supmap[filter_name_list[i]] = list(set([tup[i+1+len(y_name_list)] for tup in data_list]))
     # initialize the big y array
@@ -74,10 +50,6 @@ def data_converter(data_list, x_name, y_name_list, filter_name_list):
         sub.fill(-1)
         y_split_list.append(sub)
     # fill in the data
-    print "axis_name_supmap"
-    print "\n".join(str((k,v)) for (k,v) in axis_name_supmap.items())
-    print "xy_name_map"
-    print "\n".join(str(k) for k in xy_name_map)
     for i in range(len(data_list)):
         array_index = {k: -1 for k in filter_name_list}
         # setup axis index for all filter axis
@@ -90,7 +62,6 @@ def data_converter(data_list, x_name, y_name_list, filter_name_list):
         # fill in y data
         for y_i in range(len(y_name_list)):
             y_split_list[y_i][tuple(index_list)] = data_list[i][y_i+1]
-    print y_split_list
     return Data_Collection(axis_name_supmap, xy_name_map, y_split_list)
 
 """
@@ -168,7 +139,7 @@ class Data_Collection:
                 cur_root = len(temp[k]) - list(temp[k]).count(-1)
                 cur_prod = reduce(lambda x,y: ((x != -1 and x-1)+1)*((y != -1 and y-1)+1), temp[k])
                 # if all benchmark values are -1, then append -1, otherwise, append the gmean
-                product.append((cur_root != 0 and [cur_prod**cur_root] or [-1])[0])
+                product.append((cur_root != 0 and [cur_prod**(1.0/cur_root)] or [-1])[0])
             self.y_gmean_list[i] = np.asarray(product).reshape(self.y_gmean_list[i][...,0].shape)
         # update the axis_cur_gmean_order & axis_gmean_cost
         self.axis_cur_gmean_order = [ax for ax in self.axis_cur_split_order \
@@ -189,6 +160,11 @@ class UI:
         if overlay_axis_left == []:
             x = xy_namemap[1]
             y = y_sub_list
+            # sort x
+            dic = {x[i]: y[i] for i in range(len(x))}
+            dic = collections.OrderedDict(sorted(dic.items()))
+            x = dic.keys()
+            y = dic.values()
             if plot_type == "plot":
                 if type(x[0]) == type("str"):
                     plt.plot(range(len(x)), y, 'o--', label=legend)
@@ -251,13 +227,13 @@ class UI:
         xy_namemap = data_collection.xy_name_map
         y_list = data_collection.y_split_list
         for i in range(len(y_list)):
-            self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, "", plot_type)
+            self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, data_collection.xy_name_map[0][1+i], plot_type)
         if data_collection.y_gmean_list != []:
             y_list = data_collection.y_gmean_list
 	    overlay_axis = [k for k in overlay_axis if k not in overlay_axis[-1]]
 	    print "==========================================="
             for i in range(len(y_list)):
-                self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, "gmean", plot_type)
+                self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, "gmean"+data_collection.xy_name_map[0][1+i], plot_type)
         plt.show()
 
 err_msg = {"choose axis": "**** wrong name, input again ****",
@@ -336,6 +312,10 @@ posit_list = {'total_wl': 0,
               'delay_cp': 0,
               'area_plt': 1}
 
+"""
+    this function is only for the sb experiment (cuz the database now don't have enough data):
+    to work with the output of the database, use the db_connector
+"""
 def sb_exp_data_fetcher():
     x = raw_input("what is your x: ")
     data = []
@@ -348,7 +328,6 @@ def sb_exp_data_fetcher():
             name = param[0] + param[1]
             temp = [n for n in param if n not in [param[0], param[1]]]
             param = [name] + temp
-        print param
         param[1] = float(param[1])
         param[3] = float(param[3])
         param[4] = float(param[4])
@@ -360,15 +339,14 @@ def sb_exp_data_fetcher():
         if len(param) < 8:
             param = [p for p in [param[0], param[1], param[2], param[3], param[4]]]
             param += [-1,-1,-1]
-        y_l = [param[5], param[6], param[7]]
+        y_l = [param[1], param[5], param[6], param[7]]
         x_l = [param[x_index]]
-        ax_l = [param[0], param[1], param[2], param[3], param[4]]
+        ax_l = [param[0], param[2], param[3], param[4]]
         ax_l = [a for a in ax_l if a not in x_l]
         param = x_l + y_l + ax_l
         data.append(tuple(param))
-    y = ['total_wl', 'area_plt', 'delay_cp']
+    y = ['min_cw', 'total_wl', 'area_plt', 'delay_cp']
     filt_name_list = [n for n in attr_list if n not in [x]+y]
-    print ".........", filt_name_list
     return {"data": data, "filt_name_list": filt_name_list, "x": x, "y": y}
 
 def main():
@@ -376,15 +354,6 @@ def main():
     ret = sb_exp_data_fetcher()
     data = ret["data"]
     filt_name_list = ret["filt_name_list"]
-    #print "=========================================================="
-    #print "=========================================================="
-    #print "data:\n"
-    #for d in data:
-    #    print d
-    #print "\n".join(str(i) for i in data)
-    print "x", ret["x"]
-    print "y", ret["y"]
-    print "filt name list", filt_name_list
     data_collection = data_converter(data, ret["x"], ret["y"], filt_name_list)
     print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
     print "available axis: "
