@@ -11,6 +11,7 @@ import sqlite3
 import socket   # for hostname
 import getpass  # for username
 
+nullval = '-1'
 # main program sequence
 def main():
     params = Params()
@@ -69,7 +70,10 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                     db.rollback()
                     sys.exit(2)
 
-                rows_to_add.append(tuple(convert_strictest(param) for param in result_params_val))
+                #print(result_params_val)
+                #converted = tuple(convert_strictest(param) if param != nullval else None for param in result_params_val)
+                #print(converted)
+                rows_to_add.append(tuple(convert_strictest(param) if param != nullval else None for param in result_params_val))
 
             param_placeholders = ("?,"*params.result_param_num).rstrip(',')
             insert_rows_command = "INSERT OR IGNORE INTO {} VALUES ({})".format(params.task_table_name, param_placeholders)
