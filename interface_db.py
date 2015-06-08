@@ -38,8 +38,11 @@ def describe_tasks(tasks, dbname = "results.db"):
 def retrieve_data(x_param, y_param, filters, task, dbname = "results.db"):
     db = connect_db(dbname)
 
-    filtered_params = [f.param for f in filters]
-    cols_to_select = ','.join([x_param, y_param, ','.join(filtered_params)])
+    cols_to_select = ','.join([x_param, y_param, ])
+    # do not reselect a column for x and y
+    filtered_params = [f.param for f in filters if f.param != x_param and f.param != y_param]
+    if filtered_params:
+        cols_to_select = cols_to_select + ',' + ','.join(filtered_params)
 
     select_command = "SELECT DISTINCT {} FROM {} ".format(cols_to_select, task_name(task))
     sql_val_args = []
@@ -75,14 +78,14 @@ def describe_param(param, task, dbname = "results.db"):
     # categorical data, return a list of all distinct values
     if param_type == "TEXT":
         cursor.execute("SELECT DISTINCT {} FROM {};".format(param_name, task_name(task)))
-        return [row[0] for row in cursor.fetchall()]
+        return ('cat',(row[0] for row in cursor.fetchall()))
     # ranged data, return (min, max)
     else:
         cursor.execute("SELECT MIN({}) FROM {};".format(param_name, task_name(task)))
         param_min = cursor.fetchone()[0]
         cursor.execute("SELECT MAX({}) FROM {};".format(param_name, task_name(task)))
         param_max = cursor.fetchone()[0]
-        return (param_min, param_max)
+        return ('ran',(param_min, param_max))
 
 
 
