@@ -29,10 +29,18 @@ def get_tasks():
 @app.route('/param', methods=['GET'])
 @catch_operation_errors
 def get_param_desc():
-    task = parse_tasks()
+    tasks = parse_tasks()
     param = request.args.get('p')
-    (param_type, param_val) = d.describe_param(param, task)
-    return jsonify({'status': 'OK', 'task':task, 'param': param, 'type': param_type, 'val': param_val})
+    mode = request.args.get('m', 'range')   # by default give ranges, overriden if param is text
+    try:
+        (param_type, param_val) = d.describe_param(param, mode, tasks)
+    except ValueError:
+        return jsonify({'status': 'Unsupported type mode! ({})'.format(mode)})
+    return jsonify({'status': 'OK', 
+    'tasks':tasks, 
+    'param': param,
+    'type': param_type,
+    'val': param_val})
 
 @app.route('/tasks/', methods=['GET'])
 @catch_operation_errors

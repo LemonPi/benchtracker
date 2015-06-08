@@ -73,22 +73,44 @@ def retrieve_data(x_param, y_param, filters, task, dbname = "results.db"):
 
 # give back metainformation about a parameter to allow easier filtering
 # param would be an element of the list returned by describe_tasks
-def describe_param(param, task, dbname = "results.db"):
+def describe_param(param, mode, tasks, dbname = "results.db"):
     db = connect_db(dbname)
     cursor = db.cursor()
 
     (param_name, param_type) = param.split()
-    # categorical data, return a list of all distinct values
     if param_type == "TEXT":
-        cursor.execute("SELECT DISTINCT {} FROM {};".format(param_name, task_name(task)))
-        return ('category',(row[0] for row in cursor.fetchall()))
+        mode = 'categorical'
+    elif mode not in {'categorical', 'range'}:
+        raise ValueError
+
+    subquery = ""
+    min_param = "min_p"
+    max_param = "max_p"
+    if not isinstance(tasks,list):
+        subquery = task_name(tasks)
+        min_param = max_param = param_name
+    else:
+        subquery += '('
+        for t in range(len(tasks)):
+            if mode == "categorical":
+                subquery += "SELECT DISTINCT {} FROM {}".format(param_name, task_name(tasks[t]))
+            else:
+                subquery += "SELECT MIN({0}) as min_p, MAX({0}) as max_p FROM {1}".format(param_name, task_name(tasks[t]))
+            
+            if t < len(tasks) - 1:
+                subquery += " UNION ALL "
+        subquery += ')'
+
+    print(subquery)
+
+    # categorical data, return a list of all distinct values
+    if mode == 'categorical':
+        cursor.execute("SELECT DISTINCT {} FROM {};".format(param_name, subquery))
+        return (mode,tuple(row[0] for row in cursor.fetchall()))
     # ranged data, return (min, max)
     else:
-        cursor.execute("SELECT MIN({}) FROM {};".format(param_name, task_name(task)))
-        param_min = cursor.fetchone()[0]
-        cursor.execute("SELECT MAX({}) FROM {};".format(param_name, task_name(task)))
-        param_max = cursor.fetchone()[0]
-        return ('range',(param_min, param_max))
+        cursor.execute("SELECT MIN({}), MAX({}) FROM {};".format(min_param, max_param, subquery))
+        return (mode,tuple(cursor.fetchone()))
 
 
 
