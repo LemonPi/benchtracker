@@ -41,7 +41,7 @@ def retrieve_data(x_param, y_param, filters, task, dbname = "results.db"):
     filtered_params = [f.param for f in filters]
     cols_to_select = ','.join([x_param, y_param, ','.join(filtered_params)])
 
-    select_command = "SELECT {} FROM {} ".format(cols_to_select, task_name(task))
+    select_command = "SELECT DISTINCT {} FROM {} ".format(cols_to_select, task_name(task))
     sql_val_args = []
 
     if filters:
