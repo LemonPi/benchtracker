@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # web service, so return only JSON (no HTML)
-from flask import Flask, jsonify, request, url_for, make_response
+from flask import Flask, jsonify, request, url_for, make_response, render_template
 import sqlite3
 import interface_db as d
 import urlparse
@@ -77,6 +77,12 @@ def get_filtered_data():
     filtered_params = [p for p in filtered_params if p != x_param and p != y_param]
     params.extend(filtered_params)
     return jsonify({'status': 'OK', 'task':task, 'params':params, 'data':data})
+
+@app.route('/view')
+def get_view():
+    tasks = {task_name: task_context for (task_name, task_context) in [t.split('|',1) for t in d.list_tasks()]}
+    return render_template('viewer.html',
+                            tasks=tasks)
 
 @app.errorhandler(404)
 def not_found(error):

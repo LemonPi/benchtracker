@@ -1,0 +1,29 @@
+<html>
+
+<head>
+	<title>Benchtracker viewer</title>
+	<link rel="stylesheet" type="text/css" href="/static/viewer.css" />
+	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="/static/viewer.js">></script>
+	<script src="/static/plotter.js">></script>
+</head>
+
+
+<body>
+
+<div id="selection_bar">
+	<div class="selection_box" id="task_select">
+		<h5>Select tasks</h5>
+		<form action="">
+			{% for task_name, task_context in tasks.iteritems() %}
+		    <label title={{task_context}}><input type="checkbox" name="tasks" value="{{ task_name }}|{{ task_context }}">{{task_name}}<br></label>
+		    {% endfor %}
+	    </form>
+    </div>
+    <div class="selection_box" id="x_param">
+    </div>
+    <div class="selection_box" id="y_param">
+    </div> 
+</body>
+
+</html>
