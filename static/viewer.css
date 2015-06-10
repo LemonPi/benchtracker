@@ -9,10 +9,30 @@
 #task_select {
 	background-color: beige;
 }
+#x_param {
+	background-color: azure;
+}
+#y_param {
+	background-color: aliceblue;
+}
+#add_filter {
+	cursor: pointer;
+	background-color: crimson;
+	text-align:center;
+	width:100px;
+}
+#display_canvas {
+	cursor: pointer;
+	background-color: #32383C;
+	height:100%;
+	width:100%;
+	left:0px;
+}
 
 .selection_box {
 	float:left;
-	max-height:100%;
+	height:100%;
 	padding:1em;
-	border:2px solid black;
+	/*border:2px solid black;*/
+	overflow:auto;
 }

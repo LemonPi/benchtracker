@@ -67,9 +67,10 @@ def get_filtered_data():
     except ValueError:
         return jsonify({'status': 'Unsupported filter method!'})
 
-    task = parse_tasks()
-    if isinstance(task, list):
+    tasks = parse_tasks()
+    if len(tasks) > 1:
         return jsonify({'status': 'Only 1 task can be specified!'})
+    task = tasks[0]
 
     data = d.retrieve_data(x_param, y_param, filters, task)
     data = [tuple(row) for row in data]
@@ -94,7 +95,7 @@ def parse_tasks():
     if tasks[0].isdigit():
         all_tasks = d.list_tasks()
         tasks = [all_tasks[int(t)] for t in tasks]
-    return tasks[0] if len(tasks) == 1 else tasks
+    return tasks
 
 def parse_filters():
     filter_param = None
