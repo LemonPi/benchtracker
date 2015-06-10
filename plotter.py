@@ -28,6 +28,13 @@ import re
     rest: filters name: list of string
     return the object of data_collection
 """
+err_msg = {"choose axis": "**** wrong name, input again ****",
+           "choose method": "**** wrong method, input again ****",
+           "overlay axis": "**** wrong axis selection, input again ****",
+           "yes or no": "**** wrong input, please select \'y\' or \'n\' ****",
+           "choose plot to show": "**** plot_generator: wrong input mode or don't have gmean yet ****",
+           "choose overlay type": "**** wrong input for overlay type ****"}
+
 def data_converter(data_list, x_name, y_name_list, filter_name_list):
     # just for convenience, support pass in y_name_list as single string or list
     if type(y_name_list) == type("str"):
@@ -40,12 +47,10 @@ def data_converter(data_list, x_name, y_name_list, filter_name_list):
     for i in range(len(filter_name_list)):
         axis_name_supmap[filter_name_list[i]] = list(set([tup[i+1+len(y_name_list)] for tup in data_list]))
     # initialize the big y array
-    print axis_name_supmap
     axis_len = [len(l) for (k, l) in axis_name_supmap.items()]
     axis_len.append(len(xy_name_map[1]))
     y_split_list = []
     for i in range(len(y_name_list)):
-        print axis_len
         sub = np.ndarray(shape=axis_len, dtype=float)
         sub.fill(-1)
         y_split_list.append(sub)
@@ -112,16 +117,16 @@ class Data_Collection:
         trans_order = [(y_type == "gmean" and self.axis_cur_gmean_order \
                        or self.axis_cur_split_order).index(v[0]) for v in axis_cost_temp]
         trans_order.append(len(axis_cost_temp))
-	print "trans_order", trans_order
         # transpose the axes, based on the order of axis_split_cost
         for i in range(len(self.y_split_list)):
             if y_type == "gmean":
                 self.y_gmean_list[i] = self.y_gmean_list[i].transpose(trans_order)
             elif y_type == "split":
                 self.y_split_list[i] = self.y_split_list[i].transpose(trans_order)
-            #print (y_type == "gmean" and self.y_gmean_list[i] or self.y_split_list[i])
-            #print "=========================================================="
-        (y_type == "gmean" and [self.axis_cur_gmean_order] or [self.axis_cur_split_order])[0] = [ax[0] for ax in axis_cost_temp]
+        if y_type == "gmean":
+            self.axis_cur_gmean_order = [ax[0] for ax in axis_cost_temp]
+        else:
+            self.axis_cur_split_order = [ax[0] for ax in axis_cost_temp]
 
     """
         merge the overlay axis, calculate the gmean.
@@ -143,7 +148,7 @@ class Data_Collection:
             self.y_gmean_list[i] = np.asarray(product).reshape(self.y_gmean_list[i][...,0].shape)
         # update the axis_cur_gmean_order & axis_gmean_cost
         self.axis_cur_gmean_order = [ax for ax in self.axis_cur_split_order \
-                                     if ax not in [self.axis_cur_split_order[len(self.axis_cur_split_order)-2]]]
+                                     if ax not in [self.axis_cur_split_order[len(self.axis_cur_split_order)-1]]]
         self.axis_gmean_cost = {k: self.axis_split_cost[k] for k in self.axis_cur_gmean_order}
 
 """
@@ -156,7 +161,7 @@ class Data_Collection:
        user can merge on the currently merged split plot
 """
 class UI:
-    def subplot_traverser(self, y_sub_list, namemap, overlay_axis_left, xy_namemap, legend, plot_type="plot"):
+    def subplot_traverser(self, y_sub_list, namemap, overlay_axis_left, xy_namemap, y_i, legend, plot_type="plot"):
         if overlay_axis_left == []:
             x = xy_namemap[1]
             y = y_sub_list
@@ -165,16 +170,20 @@ class UI:
             dic = collections.OrderedDict(sorted(dic.items()))
             x = dic.keys()
             y = dic.values()
-            if plot_type == "plot":
-                if type(x[0]) == type("str"):
-                    plt.plot(range(len(x)), y, 'o--', label=legend)
-                    plt.xticks(range(len(x)), x)
-                else:
-                    plt.plot(x, y, 'o--', label=legend)
-                plt.xlabel(xy_namemap[0][0], fontsize = 12)
-                plt.ylabel(xy_namemap[0][1], fontsize = 12)
-                if legend != "":
-                    plt.legend(loc="lower right")
+            y = [(k == -1 and [None] or [k])[0] for k in y]
+            y = np.array(y).astype(np.double)
+            y_mask = np.isfinite(y)
+            if x != []:
+                if plot_type == "plot":
+                    if type(x[0]) == type("str"):
+                        plt.plot(np.array(range(len(x)))[y_mask], y[y_mask], 'o--', label=legend)
+                        plt.xticks(range(len(x)), x)
+                    else:
+                        plt.plot(np.array(x)[y_mask], y[y_mask], 'o--', label=legend)
+                    plt.xlabel(xy_namemap[0][0], fontsize = 12)
+                    plt.ylabel(xy_namemap[0][1+y_i], fontsize = 12)
+                    if legend != "":
+                        plt.legend(loc="lower right")
         else:
             cur_filter_axis = overlay_axis_left[0]
             overlay_axis_left = [k for k in overlay_axis_left if k not in [cur_filter_axis]]
@@ -183,7 +192,7 @@ class UI:
                 legend += str(cur_filter_axis) + ": "
                 legend += str(namemap[cur_filter_axis][i]) + "  "
                 argu = overlay_axis_left
-                self.subplot_traverser(y_sub_list[i], namemap, argu, xy_namemap, legend, plot_type)
+                self.subplot_traverser(y_sub_list[i], namemap, argu, xy_namemap, y_i, legend, plot_type)
                 legend = legend_restore
 
     """
@@ -194,10 +203,10 @@ class UI:
         figure_name
     """
     # TODO: if some x,y series are all -1, then we should not create the figure
-    def figure_traverser(self, y_sub_list, namemap, axis_left, xy_namemap, figure_name, plot_type="plot"): 
+    def figure_traverser(self, y_sub_list, namemap, axis_left, xy_namemap, y_i, figure_name, plot_type="plot"): 
         if axis_left[0] == []:
             plt.figure(figure_name)
-            self.subplot_traverser(y_sub_list, namemap, axis_left[1], xy_namemap, "", plot_type)
+            self.subplot_traverser(y_sub_list, namemap, axis_left[1], xy_namemap, y_i, "", plot_type)
         else:
             cur_axis = axis_left[0][0]
             axis_left[0] = [k for k in axis_left[0] if k not in [cur_axis]]
@@ -208,7 +217,7 @@ class UI:
                 temp1 = [tt for tt in axis_left[0]]
                 temp2 = [tt for tt in axis_left[1]]
                 argu = [temp1,temp2]
-                self.figure_traverser(y_sub_list[i], namemap, argu, xy_namemap, figure_name, plot_type)
+                self.figure_traverser(y_sub_list[i], namemap, argu, xy_namemap, y_i, figure_name, plot_type)
                 figure_name = figure_name_restore
 
     """
@@ -217,29 +226,27 @@ class UI:
         namemap: store the values for different settings (axis_name_supmap)
         axis_order: to be used with name_map (axis_cur_gmean_order / axis_cur_split_order)
         filter_axis: (self.filter_axis_gmean / self.filter_axis_split)
+        mode: is to select whether to plot gmean or split
     """
-    def plot_generator(self, data_collection, axis_order, overlay_axis, plot_type="plot"):
-        # reorder to match the sequence in data_collection.axis_name_supmap
-        overlay_axis = [k for k in data_collection.axis_name_supmap.keys() if k in overlay_axis]
-        axis_order = [k for k in data_collection.axis_name_supmap.keys() if k in axis_order]
-     
+    def plot_generator(self, data_collection, axis_order, overlay_axis, mode, plot_type="plot"):
         namemap = data_collection.axis_name_supmap
         xy_namemap = data_collection.xy_name_map
-        y_list = data_collection.y_split_list
-        for i in range(len(y_list)):
-            self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, data_collection.xy_name_map[0][1+i], plot_type)
-        if data_collection.y_gmean_list != []:
-            y_list = data_collection.y_gmean_list
-	    overlay_axis = [k for k in overlay_axis if k not in overlay_axis[-1]]
-	    print "==========================================="
+        if mode == "split":
+            y_list = data_collection.y_split_list
+            overlay_axis = [k for k in data_collection.axis_cur_split_order if k in overlay_axis]
+            axis_order = [k for k in data_collection.axis_cur_split_order if k in axis_order]
             for i in range(len(y_list)):
-                self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, "gmean"+data_collection.xy_name_map[0][1+i], plot_type)
+                self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, i, data_collection.xy_name_map[0][1+i], plot_type)
+        elif mode == "gmean" and data_collection.y_gmean_list != []:
+            y_list = data_collection.y_gmean_list
+            overlay_axis = [k for k in data_collection.axis_cur_gmean_order if k in overlay_axis]
+            axis_order = [k for k in data_collection.axis_cur_gmean_order if k in axis_order]
+            for i in range(len(y_list)):
+                self.figure_traverser(y_list[i], namemap, [axis_order, overlay_axis], xy_namemap, i, "gmean"+data_collection.xy_name_map[0][1+i], plot_type)
+        else:
+            print err_msg["choose plot to show"]
         plt.show()
 
-err_msg = {"choose axis": "**** wrong name, input again ****",
-           "choose method": "**** wrong method, input again ****",
-           "overlay axis": "**** wrong axis selection, input again ****",
-           "yes or no": "**** wrong input, please select \'y\' or \'n\' ****"}
 filter_method = {'TEXT': 'IN',
                  'INTEGER': 'BETWEEN', 
                  'REAL': 'BETWEEN'}
@@ -355,31 +362,68 @@ def main():
     data = ret["data"]
     filt_name_list = ret["filt_name_list"]
     data_collection = data_converter(data, ret["x"], ret["y"], filt_name_list)
-    print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    print "available axis: "
-    print "\n".join(i for i in filt_name_list)
-    overlay_axis = []
     while 1:
-        overlay_axis = raw_input("which axis to overlay, input separating by space: ")
-	if overlay_axis != '':
-            overlay_axis = overlay_axis.split()
-            if reduce(lambda x,y: (x in filt_name_list)*(y in filt_name_list), overlay_axis):
-                break
-        print err_msg["overlay axis"]
-	   
-    data_collection.transpose_overlay_axes(overlay_axis)
-    while 1:
-        choice = raw_input("merge the lowest axis (y/n)? ")
-        if choice == 'y':
-            data_collection.merge_on_gmean()
-            break
-        elif choice == 'n':
-            break
+        print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        print "available axis: "
+        print "split array", data_collection.axis_cur_split_order
+        print "gmean array", data_collection.axis_cur_gmean_order
+        overlay_type = None
+        overlay_axis = []
+        if data_collection.y_gmean_list != []:
+            while 1:
+                overlay_type = raw_input("which array to overlay, gmean or split? ")
+                if overlay_type == "gmean":
+                    break
+                elif overlay_type == "split":
+                    break
+                else:
+                    print err_msg["choose overlay type"]
         else:
-            print err_msg['yes or no']
-    ui = UI()
-    axis_left = [k for k in filt_name_list if k not in overlay_axis]
-    ui.plot_generator(data_collection, axis_left, overlay_axis)
+            overlay_type = "split"
+        while 1:
+            overlay_axis = raw_input("which axis to overlay, input separating by space: ")
+            if overlay_axis != '':
+                overlay_axis = overlay_axis.split()
+                if reduce(lambda x,y: (x in data_collection.axis_cur_split_order)*(y in data_collection.axis_cur_split_order), overlay_axis) and overlay_type == "split":
+                    break
+                elif reduce(lambda x,y: (x in data_collection.axis_cur_gmean_order)*(y in data_collection.axis_cur_gmean_order), overlay_axis) and overlay_type == "gmean":
+                    break
+                else:
+                    print err_msg["overlay axis"]
+               
+        data_collection.transpose_overlay_axes(overlay_axis, overlay_type)
+        overlay_merge = 0
+        if overlay_type == "split":
+            while 1:
+                choice = raw_input("merge the lowest axis (y/n)? ")
+                if choice == 'y':
+                    overlay_merge = 1
+                    data_collection.merge_on_gmean()
+                    break
+                elif choice == 'n':
+                    overlay_merge = 0
+                    break
+                else:
+                    print err_msg['yes or no']
+        ui = UI()
+        if overlay_type == "split":
+            axis_left = [k for k in data_collection.axis_cur_split_order if k not in overlay_axis]
+        else:
+            axis_left = [k for k in data_collection.axis_cur_gmean_order if k not in overlay_axis]
+        while 1:
+            show_plot_type = raw_input("show gmean or split? ")
+            if show_plot_type == "gmean":
+                if overlay_merge == 1:
+                    overlay_axis = [k for k in overlay_axis if k not in [overlay_axis[-1]]]
+                ui.plot_generator(data_collection, axis_left, overlay_axis, "gmean")
+                break
+            elif show_plot_type == "split":
+                ui.plot_generator(data_collection, axis_left, overlay_axis, "split")
+                break
+            elif show_plot_type == '':
+                break
+            else:
+                print err_msg["choose plot to show"]
 
 if __name__ == '__main__':
     main()
