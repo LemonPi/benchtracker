@@ -106,7 +106,6 @@ class Data_Collection:
         y_type = "gmean" / "split"
     """
     def transpose_overlay_axes(self, overlay_axis, y_type="split"):
-        print "overlay_axis", overlay_axis
         if y_type == "gmean" and self.axis_cur_gmean_order == []:
             print "**** CANNOT FILTER ON GMEAN YET. AXIS NOT SET ****"
         axis_cost_temp = (y_type == "gmean" and [self.axis_gmean_cost] or [self.axis_split_cost])[0]
@@ -118,16 +117,16 @@ class Data_Collection:
         trans_order = [(y_type == "gmean" and self.axis_cur_gmean_order \
                        or self.axis_cur_split_order).index(v[0]) for v in axis_cost_temp]
         trans_order.append(len(axis_cost_temp))
-	print "trans_order", trans_order
         # transpose the axes, based on the order of axis_split_cost
         for i in range(len(self.y_split_list)):
             if y_type == "gmean":
                 self.y_gmean_list[i] = self.y_gmean_list[i].transpose(trans_order)
             elif y_type == "split":
                 self.y_split_list[i] = self.y_split_list[i].transpose(trans_order)
-            #print (y_type == "gmean" and self.y_gmean_list[i] or self.y_split_list[i])
-            #print "=========================================================="
-        (y_type == "gmean" and [self.axis_cur_gmean_order] or [self.axis_cur_split_order])[0] = [ax[0] for ax in axis_cost_temp]
+        if y_type == "gmean":
+            self.axis_cur_gmean_order = [ax[0] for ax in axis_cost_temp]
+        else:
+            self.axis_cur_split_order = [ax[0] for ax in axis_cost_temp]
 
     """
         merge the overlay axis, calculate the gmean.
@@ -171,16 +170,20 @@ class UI:
             dic = collections.OrderedDict(sorted(dic.items()))
             x = dic.keys()
             y = dic.values()
-            if plot_type == "plot":
-                if type(x[0]) == type("str"):
-                    plt.plot(range(len(x)), y, 'o--', label=legend)
-                    plt.xticks(range(len(x)), x)
-                else:
-                    plt.plot(x, y, 'o--', label=legend)
-                plt.xlabel(xy_namemap[0][0], fontsize = 12)
-                plt.ylabel(xy_namemap[0][1+y_i], fontsize = 12)
-                if legend != "":
-                    plt.legend(loc="lower right")
+            y = [(k == -1 and [None] or [k])[0] for k in y]
+            y = np.array(y).astype(np.double)
+            y_mask = np.isfinite(y)
+            if x != []:
+                if plot_type == "plot":
+                    if type(x[0]) == type("str"):
+                        plt.plot(np.array(range(len(x)))[y_mask], y[y_mask], 'o--', label=legend)
+                        plt.xticks(range(len(x)), x)
+                    else:
+                        plt.plot(np.array(x)[y_mask], y[y_mask], 'o--', label=legend)
+                    plt.xlabel(xy_namemap[0][0], fontsize = 12)
+                    plt.ylabel(xy_namemap[0][1+y_i], fontsize = 12)
+                    if legend != "":
+                        plt.legend(loc="lower right")
         else:
             cur_filter_axis = overlay_axis_left[0]
             overlay_axis_left = [k for k in overlay_axis_left if k not in [cur_filter_axis]]
