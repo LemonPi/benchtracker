@@ -1,5 +1,7 @@
+body {
+	margin:0;
+}
 #selection_bar {
-	position:absolute;
 	top:0px;
 	left:0px;
 	width:100%;
@@ -9,10 +11,10 @@
 #task_select {
 	background-color: beige;
 }
-#x_param {
+#x_box {
 	background-color: azure;
 }
-#y_param {
+#y_box {
 	background-color: aliceblue;
 }
 #add_filter {
@@ -20,6 +22,7 @@
 	background-color: crimson;
 	text-align:center;
 	width:100px;
+	visibility:hidden;
 }
 #display_canvas {
 	cursor: pointer;
@@ -29,10 +32,40 @@
 	left:0px;
 }
 
+#generate_plot {
+	width:70%;
+	text-align: center
+}
+.attractive_button {
+	background-color:#f9f9f9;
+	-moz-border-radius:6px;
+	-webkit-border-radius:6px;
+	border-radius:6px;
+	border:1px solid #dcdcdc;
+	display:inline-block;
+	cursor:pointer;
+	color:#666666;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-decoration:none;
+}
+.attractive_button:hover {
+	background-color:#e9e9e9;
+}
+.attractive_button:active {
+	position:relative;
+	top:1px;
+}
+
+
 .selection_box {
 	float:left;
 	height:100%;
 	padding:1em;
-	/*border:2px solid black;*/
 	overflow:auto;
+}
+.filter {
+	background-color: white;
 }
