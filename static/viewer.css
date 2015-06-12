@@ -1,19 +1,31 @@
 body {
 	margin:0;
+	font-family:verdana;
 }
 
-.selection_box {
+.box_wrapper {
 	float:left;
 	height:100%;
 	overflow:hidden;
 	width:20%;
 }
+.selection_box {
+	height:100%;
+	width:100%;
+	overflow:auto;
+	padding-right: 15px;
+}
 .task {
 	display:block;
 	text-decoration: none;
 	text-align:center;
+	line-height:1.5em;
+	cursor:pointer;
+	font-family:verdana;
 }
 .sel_task {
+	font-weight:bold;
+	color:white;
 	background-color:grey;
 }
 .filter {
