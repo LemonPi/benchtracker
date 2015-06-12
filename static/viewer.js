@@ -87,7 +87,7 @@ function create_filter_window() {
 	// create selection menu
 	var param_texts = [];
 	for (p of params) param_texts.push(p.split(' ')[0]);
-	var select_param = create_selection(param_texts, params, "--- parameters ---");
+	var select_param = create_selection(param_texts, params, "--- parameters ---", false);
 	select_param.className = "filter_param";
 	select_param.addEventListener('change', query_param, false);
 
@@ -334,7 +334,7 @@ function get_selected(select) {
 	}
 	return result;
 }
-function create_selection(texts, values, prompt_text, multiple=false) {
+function create_selection(texts, values, prompt_text, multiple) {
 	var select = document.createElement('select');
 	if (multiple) select.multiple = true;
 	var prompt = document.createElement('option');
