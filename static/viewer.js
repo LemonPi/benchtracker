@@ -4,7 +4,10 @@ var tasks = new Set();
 var task_cached = "";
 var params = [];
 var labels = [];
+var overlayed_params = [];
+var subplotted_params = [];
 var active_querying_filter;
+var filter_method_map = {"range":"BETWEEN", "categorical":"IN"};
 // serialize without [] for array parameters
 jQuery.ajaxSettings.traditional = true; 
 
@@ -94,30 +97,55 @@ function create_filter_window() {
 	close.text = 'delete filter';
 	close.addEventListener('click', remove_filter, false);
 
+	// create overlay button
+	var overlay_label = document.createElement('label');
+	var overlay = document.createElement('input');
+	overlay.type = 'checkbox';
+	overlay.value = 'overlay';
+	overlay.className = 'filter_opt';
+	overlay_label.title = 'plot multiple series on a single plot, each distinguished by this parameter';
+	overlay_label.appendChild(overlay);
+	overlay_label.appendChild(document.createTextNode('overlay'));
+
+	// create subplot button
+	var subplot_label = document.createElement('label');
+	var subplot = document.createElement('input');
+	subplot.type = 'checkbox';
+	subplot.value = 'subplot';
+	subplot.className = 'filter_opt';
+	subplot_label.title = 'plot multiple side-by-side plots, each distinguished by this parameter';
+	subplot_label.appendChild(subplot);
+	subplot_label.appendChild(document.createTextNode('subplot'));	
+
 	filter.appendChild(select_param);
 	filter.appendChild(close);
+	filter.appendChild(overlay_label);
+	filter.appendChild(subplot_label);
 	sel_bar.insertBefore(filter, add_filter);
 }
 
-// actions upon generating a plot
+// actions upon clicking the generate plot button
 function generate_plot() {
+	var data_query = [root_url, '/data?', create_task_query(), '&x='];
 	var x = document.querySelector('#x_param input[name="param"]:checked');
 	var y = document.querySelector('#y_param input[name="param"]:checked');
 	if (!x) {report_error("x parameter not selected"); return;}
 	if (!y) {report_error("y parameter not selected"); return;}
 	report_debug("x_param: " + x.value);
 	report_debug("y_param: " + y.value);
+	data_query.push(x.value.split(' ')[0], '&y=', y.value.split(' ')[0], '&');
 
 	var sel_bar = document.getElementById('selection_bar');
+
 	filters = sel_bar.getElementsByClassName('filter');
 	for (var f = 0, len = filters.length; f < len; ++f) {
-		var filtered_param = filters[f].getElementsByClassName('filter_param');
-		if (filtered_param.length > 0) {
-			filtered_param = filtered_param[0].text;
-			report_debug("fp: " + filtered_param);
-		}
-
+		var filter = parse_filter(filters[f]);		
+		report_debug(filter);
+		data_query.push.apply(data_query, filter);
 	}
+
+	report_debug(data_query.join(''));
+	$.getJSON(data_query.join(''), draw_plot, false);
 }
 
 
@@ -196,6 +224,15 @@ function describe_param_adjust( data ) {
 	active_querying_filter = "";
 }
 
+// create the actual plot in the display_canvas
+function draw_plot( data ) {
+	if (data.status !== "OK") {
+		report_error(data.status);
+		return;
+	}
+	report_debug(data.data);
+}
+
 // remove old elements inside active querying filter (to be updated)
 function clean_querying_filter( data ) {
 	var old_filter_vals = active_querying_filter.getElementsByClassName("filter_val");
@@ -214,14 +251,15 @@ function create_filter_val(target, data) {
 	filter_val.className = "filter_val";
 	if (data.type === "categorical") {
 		var select_in = create_selection(data.val, data.val, "ctrl+click for multiple, shift+click for range", true);
+		select_in.className = "in";
 		filter_val.appendChild(select_in);
 	}
 	else if (data.type === "range") {
 		var min = document.createElement('input');
 		var max = document.createElement('input');
 		min.type = max.type = "text";
-		min.name = "min";
-		max.name = "max";
+		min.className = "min";
+		max.className = "max";
 		min.placeholder = min.min = data.val[0];
 		max.placeholder = max.max = data.val[1];
 		filter_val.appendChild(min);
@@ -249,6 +287,35 @@ function remove_all_filters() {
 	}
 }
 
+function parse_filter( filter ) {
+	var parsed_filter = ['fp='];
+	var filtered_param = filter.getElementsByClassName('filter_param');
+	if (filtered_param.length === 0) return [];
+	filtered_param = filtered_param[0].value.split(' ')[0];
+	parsed_filter.push(filtered_param);
+	
+	var filter_type = filter.getElementsByClassName('filter_sel');
+	if (filter_type.length === 0) return [];
+	filter_type = filter_type[0].value;
+	parsed_filter.push('&fm=', filter_method_map[filter_type]);
+
+	if (filter_type === "categorical") {
+		var select = filter.getElementsByClassName('in')[0];
+		var selected = get_selected(select);
+		if (!selected || !selected[0]) {report_debug("nothing selected"); return [];}
+		for (var s=0, len=selected.length; s < len; ++s) 
+			parsed_filter.push('&fa=', selected[s]);
+	}
+	else if (filter_type === "range") {
+		var min = filter.getElementsByClassName('min')[0].value;
+		var max = filter.getElementsByClassName('max')[0].value;
+		if (!min || !max) {report_debug("min or max missing"); return [];}
+		parsed_filter.push('&fa=', min, '&fa=', max);
+	}
+	parsed_filter.push('&');
+	return parsed_filter;
+}
+
 function query_param() {
 	var param = this.value;
 	active_querying_filter = this.parentNode;
@@ -256,6 +323,17 @@ function query_param() {
 	report_debug(this.value);
 }
 
+function get_selected(select) { 
+	var result = [];
+	var options = select && select.options;
+	var opt;
+
+	for (var i=0, len=options.length; i < len; ++i) {
+		opt = options[i];
+		if (opt.selected) result.push(opt.value);
+	}
+	return result;
+}
 function create_selection(texts, values, prompt_text, multiple=false) {
 	var select = document.createElement('select');
 	if (multiple) select.multiple = true;

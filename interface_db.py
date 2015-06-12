@@ -37,8 +37,9 @@ def describe_tasks(tasks, dbname = "results.db"):
     return shared_params
     
 # can only have 1 x param but arbitrary amounts of y_params and filters
-def retrieve_data(x_param, y_param, filters, task, dbname = "results.db"):
+def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
     db = connect_db(dbname)
+    data = []
 
     cols_to_select = x_param + ',' + y_param
     # do not reselect a column for x and y
@@ -46,29 +47,31 @@ def retrieve_data(x_param, y_param, filters, task, dbname = "results.db"):
     if filtered_params:
         cols_to_select = cols_to_select + ',' + ','.join(filtered_params)
 
-    select_command = "SELECT DISTINCT {} FROM {} ".format(cols_to_select, task_name(task))
     sql_val_args = []
+    filter_command = ""
+    for t in range(len(tasks)):
+        select_command = "SELECT DISTINCT {} FROM {} ".format(cols_to_select, task_name(tasks[t]))
+        if filters:
+            # first time, still need to populate sql_val_args and make filter_command
+            if t == 0: 
+                filter_command = "WHERE "
+                for f in range(len(filters)):
 
-    if filters:
-        filter_command = "WHERE "
-        for f in range(len(filters)):
+                    filter_command += str(filters[f])
+                    sql_val_args.extend(filters[f].args)
 
-            filter_command += str(filters[f])
-            sql_val_args.extend(filters[f].args)
-
-            if f < len(filters) - 1:
-                filter_command += " AND "
+                    if f < len(filters) - 1:
+                        filter_command += " AND "
 
         select_command += filter_command
+        select_command += ';'
 
-    select_command += ';'
-
-    print(select_command)
-    print(sql_val_args)
-    cursor = db.cursor()
-    cursor.execute(select_command, sql_val_args)
+        print(select_command)
+        cursor = db.cursor()
+        cursor.execute(select_command, sql_val_args)
+        data.append(cursor.fetchall());
         
-    return cursor.fetchall()
+    return data
 
 
 # give back metainformation about a parameter to allow easier filtering

@@ -68,16 +68,17 @@ def get_filtered_data():
         return jsonify({'status': 'Unsupported filter method!'})
 
     tasks = parse_tasks()
-    if len(tasks) > 1:
-        return jsonify({'status': 'Only 1 task can be specified!'})
-    task = tasks[0]
 
-    data = d.retrieve_data(x_param, y_param, filters, task)
-    data = [tuple(row) for row in data]
+    data = d.retrieve_data(x_param, y_param, filters, tasks)
+    data = [[tuple(row) for row in task] for task in data]
+
     params = [x_param.split()[0], y_param.split()[0]]
     filtered_params = [p for p in filtered_params if p != x_param and p != y_param]
     params.extend(filtered_params)
-    return jsonify({'status': 'OK', 'task':task, 'params':params, 'data':data})
+    return jsonify({'status': 'OK', 
+        'tasks':tasks, 
+        'params':params,
+        'data':data})
 
 @app.route('/view')
 def get_view():
