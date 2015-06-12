@@ -97,30 +97,30 @@ function create_filter_window() {
 	close.text = 'delete filter';
 	close.addEventListener('click', remove_filter, false);
 
-	// create overlay button
-	var overlay_label = document.createElement('label');
-	var overlay = document.createElement('input');
-	overlay.type = 'checkbox';
-	overlay.value = 'overlay';
-	overlay.className = 'filter_opt';
-	overlay_label.title = 'plot multiple series on a single plot, each distinguished by this parameter';
-	overlay_label.appendChild(overlay);
-	overlay_label.appendChild(document.createTextNode('overlay'));
+	// // create overlay button
+	// var overlay_label = document.createElement('label');
+	// var overlay = document.createElement('input');
+	// overlay.type = 'checkbox';
+	// overlay.value = 'overlay';
+	// overlay.className = 'filter_opt';
+	// overlay_label.title = 'plot multiple series on a single plot, each distinguished by this parameter';
+	// overlay_label.appendChild(overlay);
+	// overlay_label.appendChild(document.createTextNode('overlay'));
 
-	// create subplot button
-	var subplot_label = document.createElement('label');
-	var subplot = document.createElement('input');
-	subplot.type = 'checkbox';
-	subplot.value = 'subplot';
-	subplot.className = 'filter_opt';
-	subplot_label.title = 'plot multiple side-by-side plots, each distinguished by this parameter';
-	subplot_label.appendChild(subplot);
-	subplot_label.appendChild(document.createTextNode('subplot'));	
+	// // create subplot button
+	// var subplot_label = document.createElement('label');
+	// var subplot = document.createElement('input');
+	// subplot.type = 'checkbox';
+	// subplot.value = 'subplot';
+	// subplot.className = 'filter_opt';
+	// subplot_label.title = 'plot multiple side-by-side plots, each distinguished by this parameter';
+	// subplot_label.appendChild(subplot);
+	// subplot_label.appendChild(document.createTextNode('subplot'));	
+	// filter.appendChild(overlay_label);
+	// filter.appendChild(subplot_label);
 
 	filter.appendChild(select_param);
 	filter.appendChild(close);
-	filter.appendChild(overlay_label);
-	filter.appendChild(subplot_label);
 	sel_bar.insertBefore(filter, add_filter);
 }
 
