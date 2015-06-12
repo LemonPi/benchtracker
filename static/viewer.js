@@ -123,7 +123,10 @@ function create_filter_window() {
 
 	filter.appendChild(select_param);
 	filter.appendChild(close);
-	sel_bar.insertBefore(filter, add_filter);
+	var wrapper = document.createElement('div');
+	wrapper.className = "box_wrapper";
+	wrapper.appendChild(filter);
+	sel_bar.insertBefore(wrapper, add_filter);
 }
 
 // actions upon clicking the generate plot button
