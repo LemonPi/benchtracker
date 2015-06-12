@@ -16,12 +16,13 @@ jQuery.ajaxSettings.traditional = true;
 $(document).ready(function() {
 
 // update all other selection boxes if necessary when tasks are changed
-var checkboxes = document.getElementById("task_select").getElementsByTagName("input");
-for (var i=0; i < checkboxes.length; ++i) {
-	checkboxes[i].addEventListener('change', function() {
+var task_select = document.getElementById("task_select").getElementsByClassName('task');
+for (var i=0; i < task_select.length; ++i) {
+	task_select[i].addEventListener('click', function(e) {
+		e.preventDefault();
 		task_cached = "";
-		if (this.checked) tasks.add(this.value);
-		else tasks.delete(this.value);
+		if (this.className === "task") {tasks.add(this.title); this.className = "task sel_task";}
+		else {tasks.delete(this.title); this.className = "task";}
 		update_params();
 	});
 }
@@ -67,6 +68,7 @@ function populate_param_windows() {
 		input.value = p;
 		input.name = "param";
 		label.title = p_pair[1];
+		label.className = "param_label";
 
 		label.appendChild(input);
 		label.appendChild(document.createTextNode(p_pair[0]));
