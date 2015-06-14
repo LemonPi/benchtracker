@@ -288,7 +288,8 @@ function remove_filter() {
 function remove_all_filters() {
 	var filters = document.getElementsByClassName('filter');
 	while (filters[0]) {
-		filters[0].parentNode.removeChild(filters[0]);
+		// box wrapper surrounding filter
+		filters[0].parentNode.parentNode.removeChild(filters[0].parentNode);
 	}
 }
 
