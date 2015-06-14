@@ -16,23 +16,21 @@
 <body>
 
 <div id="selection_bar">
-	<div class="selection_box" id="task_select">
-		<h5>Select tasks</h5>
-		<form action="">
-			{% for task_name, task_context in tasks.iteritems() %}
-		    <label title={{task_context}}><input type="checkbox" name="tasks" value="{{ task_name }}|{{ task_context }}">{{task_name}}<br></label>
-		    {% endfor %}
-	    </form>
-    </div>
-    <div class="selection_box" id="x_box"> 
-    	<h5>x parameter</h5>
+	<div class="box_wrapper"><div class="selection_box" id="task_select">
+		<h5 class="box_header">Select tasks</h5>
+		{% for task_name, task_context in tasks.iteritems() %}
+	    <a class="task" title="{{ task_name }}|{{ task_context }}">{{task_name}}</a>
+	    {% endfor %}
+    </div></div>
+    <div class="box_wrapper"><div class="selection_box" id="x_box"> 
+    	<h5 class="box_header">x parameter</h5>
     	<form id="x_param"></form>
-    </div>
-    <div class="selection_box" id="y_box">
-    	<h5>y parameter</h5>
+    </div></div>
+    <div class="box_wrapper"><div class="selection_box" id="y_box">
+    	<h5 class="box_header">y parameter</h5>
     	<form id="y_param"></form>
-    </div> 
-    <div class="selection_box" id="add_filter"><br><br><br><br><h1>+</h1><br>filter</div>
+    </div> </div>
+    <div class="box_wrapper" id="add_filter"><br><br><br><br><h1>+</h1><br>filter</div>
 </div>
 
 <div id="display_canvas">
