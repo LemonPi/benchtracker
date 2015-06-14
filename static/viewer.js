@@ -143,12 +143,10 @@ function generate_plot() {
 		report_debug(filter);
 		data_query.push.apply(data_query, filter);
 	}
-
+    console.log(">>>>  data query >>>>");
 	report_debug(data_query.join(''));
 	$.getJSON(data_query.join(''), draw_plot, false);
 }
-
-
 
 // JSON request callbacks
 function get_params( data ) {
@@ -224,14 +222,6 @@ function describe_param_adjust( data ) {
 	active_querying_filter = "";
 }
 
-// create the actual plot in the display_canvas
-function draw_plot( data ) {
-	if (data.status !== "OK") {
-		report_error(data.status);
-		return;
-	}
-	report_debug(data.data);
-}
 
 // remove old elements inside active querying filter (to be updated)
 function clean_querying_filter( data ) {

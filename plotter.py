@@ -9,7 +9,7 @@ take as input:
 prompt user input:
     the overlay axis, and the choice of geometric mean
 
-input data: 
+input data from the database: 
     in the form of [(a,b,c), (a,b,c), ...]: a list of tuples
 """
 
@@ -20,6 +20,7 @@ import operator
 import interface_db as idb
 import os
 import re
+import sqlite3
 
 """
     to convert the input table (list of tuples) to the high dimensional array
@@ -70,7 +71,7 @@ def data_converter(data_list, x_name, y_name_list, filter_name_list):
     return Data_Collection(axis_name_supmap, xy_name_map, y_split_list)
 
 """
-    things to update: __init__
+    holds all data and meta info needed for plotting and user interaction
 """
 class Data_Collection:
     y_split_list = []
@@ -152,13 +153,7 @@ class Data_Collection:
         self.axis_gmean_cost = {k: self.axis_split_cost[k] for k in self.axis_cur_gmean_order}
 
 """
-    UI procedure:
-    1. ask user about overlay
-    2. display split plot
-    3. user can click "gmean" button, then call merge_on_gmean
-    4. so gmean list and split list can be filtered separately
-    5. upon close of gmean list plot, clear gmean value, so 
-       user can merge on the currently merged split plot
+    actual plotter functions: show window, do subplots
 """
 class UI:
     def subplot_traverser(self, y_sub_list, namemap, overlay_axis_left, xy_namemap, y_i, legend, plot_type="plot"):
@@ -247,6 +242,11 @@ class UI:
             print err_msg["choose plot to show"]
         plt.show()
 
+"""
+    connect the database to the plotter, setup the data_collection object for plotting
+"""
+# NOTE: not useful right now, cuz there is not enough data in the database yet
+#       just ignore this db_connector function
 filter_method = {'TEXT': 'IN',
                  'INTEGER': 'BETWEEN', 
                  'REAL': 'BETWEEN'}
@@ -309,6 +309,9 @@ def db_connector():
     data = idb.retrieve_data(x, y, filt_list, tasks[task_num])
     return {"data": data, "filt_name_list": filt_name_list, "x": x, "y": y}
 
+
+# NOTE: change the following dict to your own version
+
 keyword_list = {'total_wl': 'Total wirelength',
                 'delay_cp': 'Final critical path:',
                 'area_plt': 'per logic tile'}
@@ -323,55 +326,110 @@ posit_list = {'total_wl': 0,
     this function is only for the sb experiment (cuz the database now don't have enough data):
     to work with the output of the database, use the db_connector
 """
+# NOTE: you should change this function to fetch your own data
 def sb_exp_data_fetcher():
     x = raw_input("what is your x: ")
     data = []
+    # y is automatically set to "min_chan_width", "total_wl", "area_plt", "delay_cp"
     attr_list = ['blif', 'min_cw', 'sb', 'wl', 'fc', 'total_wl', 'area_plt', 'delay_cp']
     x_index = attr_list.index(x)
     dire = '/home/zenghq/workspace/summer/fpga/vpr-sb-benchmark-22nm/lo-stress'
+    #conn = sqlite3.connect('results.db')
+    #c = conn.cursor()
+    #c.execute('''DROP TABLE IF EXISTS sb_exp_22nm''')
+    #c.execute('''CREATE TABLE sb_exp_22nm (circuit TEXT, min_chan_width INEGER, switch_block TEXT, wire_length INTEGER, fc REAL, total_wire_length INTEGER, area REAL, critical_path_delay REAL)''')
     for f_name in os.listdir(dire):
+        # the naming convension in this "lo-stress" folder is: <blif>_<min chan width>_<switch block>_<wire length>_<fc>
         param = f_name.split('_')
         if len(param) > 5:
             name = param[0] + param[1]
             temp = [n for n in param if n not in [param[0], param[1]]]
             param = [name] + temp
+        # cast min_chan_width, wire_length, fc
         param[1] = float(param[1])
         param[3] = float(param[3])
         param[4] = float(param[4])
+        # find total_wl, area_plt and delay_cp in the log file
         for line in open(dire + '/' + f_name, 'r'):
             for (k, v) in keyword_list.items():
                 if v in line:
                     d = re.findall(regexp_list[k], line)[posit_list[k]]
                     param.append(float(d))
+        # if the experiment is failed, then the param list will have length < 8 (cuz some metrics don't have value in the log file)
         if len(param) < 8:
+            # invalidate some fields, and fill in invalid value
             param = [p for p in [param[0], param[1], param[2], param[3], param[4]]]
             param += [-1,-1,-1]
+        #c.execute("INSERT INTO sb_exp_22nm VALUES (?, ?, ?, ?, ?, ?, ?, ?)", param)
+        # reorder the sequence, always keeps this order: x, y1, y2, ..., yn, filt1, filt2, ..., filtm
         y_l = [param[1], param[5], param[6], param[7]]
         x_l = [param[x_index]]
         ax_l = [param[0], param[2], param[3], param[4]]
         ax_l = [a for a in ax_l if a not in x_l]
         param = x_l + y_l + ax_l
         data.append(tuple(param))
+    # setup the name list corresponds to the param values:
+    # NOTE: the sequence in the name list should agree with the sequence of the param tuple.
+    # e.g.: if the param tuple is: (0.05, 112, 'wilton', 'bgm.blif')
+    #       then x should be 'wl', y should be ['min cw'], and filt_name_list should be ['sb', 'arch']
+    #       (of course you can choose a different name, like 'switch block' instead of 'sb')
+    #conn.commit()
+    #conn.close()
     y = ['min_cw', 'total_wl', 'area_plt', 'delay_cp']
     filt_name_list = [n for n in attr_list if n not in [x]+y]
+    # the returned dict is to provide info for data_converter function
     return {"data": data, "filt_name_list": filt_name_list, "x": x, "y": y}
 
+
+"""
+    control board
+"""
 def main():
     #ret = db_connector()
     ret = sb_exp_data_fetcher()
     data = ret["data"]
     filt_name_list = ret["filt_name_list"]
     data_collection = data_converter(data, ret["x"], ret["y"], filt_name_list)
+
+    print "########################################"
+    print "---- Description: ----\n" + \
+          ">>\n" + \
+          "VPR benchmark experiment should have 2 types of data: \n" + \
+          "parameter: settings in for the experiment (e.g.: fc, wire length, switch block ...)\n" + \
+          "metrics: measurements from the VPR output (e.g.: min chan width, critical path delay ...)\n" + \
+          ">>\n" + \
+          "Data passed into this plotter should have already been classified into 3 axes: \n" + \
+          "one [x] axis (chosen from parameter)\n" + \
+          "multiple [y] axis (chosen from metrics)\n" + \
+          "multiple [filter] axis (all the unchosen parameters)\n" + \
+          ">>\n" + \
+          "For example, if the experiment has: \n" + \
+          "[arch, circuit, wire length, switch block, fc, min chan width, critical path delay, area, total wire length]\n" + \
+          "and you choose fc as x axis, [min chan width, critical path delay, area, total wire length] as y axes,\n" + \
+          "then filter axes are the unchosen parameters, i.e.: arch, circuit, wire length, switch block. "
+    print "#########################################"
+    print "---- Usage ----\n" + \
+          ">>\n" + \
+          "1. choose overlay axes among the filter axes (overlay axes will become legend in a single plot)\n" + \
+          "2. choose whether to whether to calculate the geo mean over the overlay axis (\"merge\" function)\n" + \
+          "   (Notice: you can choose as many overlay axes as you like, but when you choose merge, it will only\n" + \
+          "    calculate the geo mean over the last overlay axis. So for example, if your overlay axes are [fc, circuit],\n" + \
+          "    the merge will only get geo mean over all the circuits rather that all the (circuit,fc) combination, and \n" + \
+          "    fc will still be overlaid in the merged plot.)\n" + \
+          "3. the data after geo mean calcultion will be referred to as \"gmean\", and the data before the geo mean will be \n" + \
+          "   referred to as \"split\", you can switch the overlay axes for both gmean data and split data, for as many times \n" + \
+          "   as you like. But once you \"merge\" on a new axis, the old gmean data will be replaced by the new one, and further\n" + \
+          "   operation will be acted on only the new gmean data."
     while 1:
         print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-        print "available axis: "
-        print "split array", data_collection.axis_cur_split_order
-        print "gmean array", data_collection.axis_cur_gmean_order
+        print "available axis to overlay: "
+        print "for the split data", data_collection.axis_cur_split_order
+        print "for the gmean data", data_collection.axis_cur_gmean_order
         overlay_type = None
         overlay_axis = []
         if data_collection.y_gmean_list != []:
             while 1:
-                overlay_type = raw_input("which array to overlay, gmean or split? ")
+                overlay_type = raw_input("which array to overlay (gmean / split): ")
                 if overlay_type == "gmean":
                     break
                 elif overlay_type == "split":
@@ -381,7 +439,7 @@ def main():
         else:
             overlay_type = "split"
         while 1:
-            overlay_axis = raw_input("which axis to overlay, input separating by space: ")
+            overlay_axis = raw_input("which axes to overlay: (input separated by space): ")
             if overlay_axis != '':
                 overlay_axis = overlay_axis.split()
                 if reduce(lambda x,y: (x in data_collection.axis_cur_split_order)*(y in data_collection.axis_cur_split_order), overlay_axis) and overlay_type == "split":
@@ -411,7 +469,7 @@ def main():
         else:
             axis_left = [k for k in data_collection.axis_cur_gmean_order if k not in overlay_axis]
         while 1:
-            show_plot_type = raw_input("show gmean or split? ")
+            show_plot_type = raw_input("show plot (gmean / split) ")
             if show_plot_type == "gmean":
                 if overlay_merge == 1:
                     overlay_axis = [k for k in overlay_axis if k not in [overlay_axis[-1]]]

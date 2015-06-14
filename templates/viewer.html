@@ -4,8 +4,12 @@
 	<title>Benchtracker viewer</title>
 	<link rel="stylesheet" type="text/css" href="/static/viewer.css" />
 	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-	<script src="/static/viewer.js">></script>
-	<script src="/static/plotter.js">></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.7.0/nv.d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.7.0/nv.d3.css" rel="stylesheet" type="text/css"></link>
+    <script src="/static/plotter.js"></script>
+	<script src="/static/viewer.js"></script>
 </head>
 
 
@@ -33,6 +37,15 @@
 
 <div id="display_canvas">
 	<a id="generate_plot" href="#" class="attractive_button"><span>Generate plot</span></a>
+    <div class="selection_box" id="overlay_select">
+        <h5>select overlay axes</h5>
+        <!--this form should not have any server side handler
+            so more precisely, it should be a button-->
+        <form action="" id="overlay_axes_selector">
+        </form>
+    </div>
+    <div id="chart">
+    </div>
 </div>
 
 </body>
