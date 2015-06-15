@@ -1,6 +1,7 @@
 // globals
 var root_url = 'http://localhost:5000'
 var tasks = new Set();
+var x_sel = y_sel = "";
 var task_cached = "";
 var params = [];
 var labels = [];
@@ -10,6 +11,7 @@ var active_querying_filter;
 var filter_method_map = {"range":"BETWEEN", "categorical":"IN"};
 // serialize without [] for array parameters
 jQuery.ajaxSettings.traditional = true; 
+
 
 
 // DOM modifying functions
@@ -34,11 +36,16 @@ var gen_plot = document.getElementById('generate_plot');
 gen_plot.addEventListener('click', generate_plot);
 
 
+// cached persistent DOM objects
+var x_param = document.getElementById('x_param');
+var y_param = document.getElementById('y_param');
+
 });
 
 
 
 // actions upon selecting a task
+// all edit on DOM is done by populate_param_windows, which looks at params array
 function update_params() {
 	remove_all_filters();
 	if (tasks.size === 0) {
@@ -55,27 +62,45 @@ function update_params() {
 	// to assure correct sequence, populate param windows must be called inside the functions that update params
 	report_debug("---------------");
 }
+function clear_param_windows() {
+	while (x_param.firstChild) x_param.removeChild(x_param.firstChild);
+	while (y_param.firstChild) y_param.removeChild(y_param.firstChild);
+}
 function populate_param_windows() {
-	$('#x_param').empty();
-	$('#y_param').empty();
-	var x_param = document.getElementById('x_param');
-	var y_param = document.getElementById('y_param');
+	clear_param_windows();
+
 	for (p of params) {
 		p_pair = p.split(' ');
-		var label = document.createElement('label');
-		var input = document.createElement('input');
-		input.type = 'radio';
-		input.value = p;
-		input.name = "param";
-		label.title = p_pair[1];
-		label.className = "param_label";
+		var val = document.createElement('a');
+		val.className = "param";
+		val.title = p;
+		val.text = p_pair[0];
 
-		label.appendChild(input);
-		label.appendChild(document.createTextNode(p_pair[0]));
-		label.appendChild(document.createElement('br'));
-		x_param.appendChild(label);
-		label_y = label.cloneNode(true);
-		y_param.appendChild(label_y);
+		if (p_pair[1] !== "TEXT") {
+			var val_y = val.cloneNode(true);
+			val_y.addEventListener('click', function(e) {
+				e.preventDefault();
+				if (this.className === "param") {
+					if (y_sel) y_sel.className = "param"; 
+					y_sel = this; 
+					this.className = "param sel_param";
+				}
+				else {this.className = "param"; y_sel = "";}
+			}, false);
+			y_param.appendChild(val_y);
+		}
+
+		val.addEventListener('click', function(e) {
+			e.preventDefault();
+			// clear previous selected x
+			if (this.className === "param") { 
+				if (x_sel) x_sel.className = "param";
+				x_sel = this; 
+				this.className = "param sel_param";
+			}
+			else {this.className = "param"; x_sel = "";}
+		}, false);
+		x_param.appendChild(val);
 	}
 	report_debug("populated param windows");
 }
@@ -99,28 +124,6 @@ function create_filter_window() {
 	close.text = 'delete filter';
 	close.addEventListener('click', remove_filter, false);
 
-	// // create overlay button
-	// var overlay_label = document.createElement('label');
-	// var overlay = document.createElement('input');
-	// overlay.type = 'checkbox';
-	// overlay.value = 'overlay';
-	// overlay.className = 'filter_opt';
-	// overlay_label.title = 'plot multiple series on a single plot, each distinguished by this parameter';
-	// overlay_label.appendChild(overlay);
-	// overlay_label.appendChild(document.createTextNode('overlay'));
-
-	// // create subplot button
-	// var subplot_label = document.createElement('label');
-	// var subplot = document.createElement('input');
-	// subplot.type = 'checkbox';
-	// subplot.value = 'subplot';
-	// subplot.className = 'filter_opt';
-	// subplot_label.title = 'plot multiple side-by-side plots, each distinguished by this parameter';
-	// subplot_label.appendChild(subplot);
-	// subplot_label.appendChild(document.createTextNode('subplot'));	
-	// filter.appendChild(overlay_label);
-	// filter.appendChild(subplot_label);
-
 	filter.appendChild(select_param);
 	filter.appendChild(close);
 	var wrapper = document.createElement('div');
@@ -132,13 +135,11 @@ function create_filter_window() {
 // actions upon clicking the generate plot button
 function generate_plot() {
 	var data_query = [root_url, '/data?', create_task_query(), '&x='];
-	var x = document.querySelector('#x_param input[name="param"]:checked');
-	var y = document.querySelector('#y_param input[name="param"]:checked');
-	if (!x) {report_error("x parameter not selected"); return;}
-	if (!y) {report_error("y parameter not selected"); return;}
-	report_debug("x_param: " + x.value);
-	report_debug("y_param: " + y.value);
-	data_query.push(x.value.split(' ')[0], '&y=', y.value.split(' ')[0], '&');
+	if (!x_sel) {report_error("x parameter not selected"); return;}
+	if (!y_sel) {report_error("y parameter not selected"); return;}
+	report_debug("x_param: " + x_sel.title);
+	report_debug("y_param: " + y_sel.title);
+	data_query.push(x_sel.title.split(' ')[0], '&y=', y_sel.title.split(' ')[0], '&');
 
 	var sel_bar = document.getElementById('selection_bar');
 
@@ -270,9 +271,8 @@ function create_filter_val(target, data) {
 // utility functions
 // always attached to a close button inside the filter
 function remove_filter() {
-	console.log(this.parentNode);
-	var filter = this.parentNode;
-	filter.parentNode.removeChild(filter);
+	var filter_box = this.parentNode.parentNode;
+	filter_box.parentNode.removeChild(filter_box);
 }
 
 function remove_all_filters() {

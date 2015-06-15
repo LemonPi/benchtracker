@@ -36,21 +36,46 @@ def describe_tasks(tasks, dbname = "results.db"):
             shared_params = params
     return shared_params
     
+def retrieve_primary_keys(task, db):
+    cursor = db.cursor()
+    cursor.execute("PRAGMA table_info(%s)" % task_name(task))
+    column_info = cursor.fetchall()
+    primary_keys = []
+    for info in column_info:
+        print(info)
+        if info[5] != 0:
+            print("key param:", info[1])
+            primary_keys.append(info[1])
+
+    return primary_keys
+
 # can only have 1 x param but arbitrary amounts of y_params and filters
 def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
     db = connect_db(dbname)
     data = []
 
-    cols_to_select = x_param + ',' + y_param
-    # do not reselect a column for x and y
-    filtered_params = [f.param for f in filters if f.param != x_param and f.param != y_param]
-    if filtered_params:
-        cols_to_select = cols_to_select + ',' + ','.join(filtered_params)
+    cols_to_select = [x_param, y_param]
+
+    # always pass shared primary key information (they define a distinct benchmark)
+    primary_keys = []
+    for t in range(len(tasks)):
+        if t == 0:
+            primary_keys = retrieve_primary_keys(tasks[t], db)
+        else:
+            primary_keys = intersection(primary_keys, retrieve_primary_keys(tasks[t], db))
+    for key in primary_keys:
+        if key not in cols_to_select:
+            cols_to_select.append(key)
+
+    # also pass filter parameter value in
+    for f in filters:
+        if f.param not in cols_to_select:
+            cols_to_select.append(f.param)
 
     sql_val_args = []
     filter_command = ""
     for t in range(len(tasks)):
-        select_command = "SELECT DISTINCT {} FROM {} ".format(cols_to_select, task_name(tasks[t]))
+        select_command = "SELECT DISTINCT {} FROM {} ".format(','.join(cols_to_select), task_name(tasks[t]))
         if filters:
             # first time, still need to populate sql_val_args and make filter_command
             if t == 0: 
@@ -71,7 +96,7 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
         cursor.execute(select_command, sql_val_args)
         data.append(cursor.fetchall());
         
-    return data
+    return cols_to_select, data
 
 
 # give back metainformation about a parameter to allow easier filtering

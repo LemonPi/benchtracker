@@ -5,6 +5,7 @@ import sys
 import re
 from subprocess import call
 import os.path
+import shlex
 import argparse
 import textwrap
 import sqlite3
@@ -32,6 +33,15 @@ def main():
     db.close()
 
 
+def catch_operation_errors(func):
+    def run_checker(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except OSError:
+            print("file not found, skipping (rest should still run)!")
+            return
+    return run_checker
+
 def verify_paths(params):
     """verify paths exist as either relational or absolute paths, modifying them if necessary"""
     if os.path.isdir(params.task_dir):
@@ -56,6 +66,7 @@ def update_db(params, db):
 consider running with --clean to remake task table".format(row[0], highest_run))
         # else first run, nothing in table yet
 
+    @catch_operation_errors
     def add_run_to_db(params, run):
         resfilename = get_result_file(params, run)
         run_number = get_trailing_num(run)
@@ -63,7 +74,8 @@ consider running with --clean to remake task table".format(row[0], highest_run))
 
         with open(resfilename, 'r') as res:
             # make sure table is compatible with run data by inserting any new columns
-            result_params = [params.run_prefix, "parsed_date"]
+            # always called "run" in table (converted from whatever prefix users use)
+            result_params = ["run", "parsed_date"]
             result_params.extend(res.readline().split('\t'))
             if result_params[-1] == '\n':
                 result_params.pop()
@@ -249,7 +261,9 @@ def check_result_exists(params, run):
             task_name = params.task_name,
             run_number = get_trailing_num(run))
         print(run, " called ", parsed_call)
-        call(parsed_call.split())
+        parsed_call = shlex.split(parsed_call)
+        parsed_call[0] = os.path.expanduser(parsed_call[0])
+        call(parsed_call)
     else:
         print(run, " OK")
 

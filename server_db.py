@@ -69,12 +69,9 @@ def get_filtered_data():
 
     tasks = parse_tasks()
 
-    data = d.retrieve_data(x_param, y_param, filters, tasks)
+    (params, data) = d.retrieve_data(x_param, y_param, filters, tasks)
     data = [[tuple(row) for row in task] for task in data]
 
-    params = [x_param.split()[0], y_param.split()[0]]
-    filtered_params = [p for p in filtered_params if p != x_param and p != y_param]
-    params.extend(filtered_params)
     return jsonify({'status': 'OK', 
         'tasks':tasks, 
         'params':params,
