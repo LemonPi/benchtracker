@@ -270,9 +270,8 @@ function create_filter_val(target, data) {
 // utility functions
 // always attached to a close button inside the filter
 function remove_filter() {
-	console.log(this.parentNode);
-	var filter = this.parentNode;
-	filter.parentNode.removeChild(filter);
+	var filter_box = this.parentNode.parentNode;
+	filter_box.parentNode.removeChild(filter_box);
 }
 
 function remove_all_filters() {
