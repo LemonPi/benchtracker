@@ -150,7 +150,7 @@ function generate_plot() {
 	}
     console.log(">>>>  data query >>>>");
 	report_debug(data_query.join(''));
-	$.getJSON(data_query.join(''), draw_plot, false);
+	$.getJSON(data_query.join(''), plotter_setup, false);
 }
 
 // JSON request callbacks

@@ -5,20 +5,51 @@ $(document).ready(function () {
 */
 // create the actual plot in the display_canvas
 //
-var overlay_list = [0];
-
-function draw_plot( data ) {
-	if (data.status !== "OK") {
-		report_error(data.status);
-		return;
-	}
-    report_debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-	report_debug(data.data);
-    report_debug(data.params);
-    report_debug(data.tasks);
-    plot_generator(data);
+var overlay_list = [];
+// raw data means it is not processed by gmean, and its param name has not been manipulated.
+var raw_data = null;
+var gmean_data = null;
+function plotter_setup(data) {
+    if (data.status !== 'OK') {
+        report_error(data.status);
+        return;
+    }
+    // initialize
+    raw_data = data;
+    gmean_data = null;
+    overlay_list = [];
+    generate_overlay_selector('raw');
 }
 
+// type is to used to decide whether to generate axes of raw data or gmean data
+function generate_overlay_selector(type) {
+    var selector_div = d3.select('#overlay_select');
+    // clear up
+    selector_div.html('');
+    var choice = null;
+    if (type == 'raw') {
+        choice = raw_data.params;
+    } else {
+        choice = gmean_data.params;
+    }
+    selector_div.append('h5').text('select overlay axis');
+    var form = selector_div.append('form').attr("id", "overlay_options").attr('action', '').append("fieldset");
+    form.append('legend').text('select overlay axes:');
+    for (var i = 2; i < choice.length; i ++ ) {
+        //var label = form.append('label').attr('class', 'param_label');
+        form.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
+        form.append('label').text(choice[i]).append('br');
+    }
+    form.append('button').attr('type', 'button').attr('id', 'overlay_submission').text('Get Plot!');
+    $('#overlay_submission').click(function () {var checkbox = form.selectAll('input', '[type="checkbox"]');
+                                                checkbox.each(function () {if (d3.select(this).property('checked')) {
+                                                                               overlay_list.push(d3.select(this).attr('index'));
+                                                                               console.log('get index');
+                                                                               console.log(d3.select(this).attr('index'));
+                                                                           }
+                                                                         });
+                                                plot_generator();} );
+}
 function simple_plot(params, series, overlay_list) {
     // setup plot name
     var plot_name = "";
@@ -28,7 +59,7 @@ function simple_plot(params, series, overlay_list) {
             plot_name += '  ';
         }
     }
-    // setup data lines
+    // setup raw_data lines
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
     for (k in lineData) {
@@ -83,40 +114,40 @@ function sinAndCos() {
 
 }
 */
-function plot_generator(data) {
-    var series = data.data;
+function plot_generator(type) {
+    var series = raw_data.data;
     console.log("================================");
     console.log(series);
     // filter is an array of array: filter[i][*] stores all possible values of axis i
     var filter = [];
-    for (var t = 0; t < data.tasks.length; t++) {
-        for (var i = 0; i < data.params.length - 2; i++) {
+    for (var t = 0; t < raw_data.tasks.length; t++) {
+        for (var i = 0; i < raw_data.params.length - 2; i++) {
             var temp = new Set();
-            for (var j = 0; j < data.data[t].length; j++) {
-                temp.add(data.data[t][j][i+2]);
+            for (var j = 0; j < raw_data.data[t].length; j++) {
+                temp.add(raw_data.data[t][j][i+2]);
             }
             var filt_name = [];
             for (v of temp) {
                 filt_name.push(v);
             }
             filter.push(filt_name);
-            console.log("filt_name: " + data.params[i+2]);
+            console.log("filt_name: " + raw_data.params[i+2]);
             console.log("filt_temp " + filt_name);
         }
     }
     /*
     // task dir
-    for (var i = 0; i < data.tasks.length; i++) {
-        alert("task name: " + data.tasks[i]);
+    for (var i = 0; i < raw_data.tasks.length; i++) {
+        alert("task name: " + raw_data.tasks[i]);
         // traverse all possible combinations of all filter axes
-        traverse(series, filter, data.param.length - 2, '');
+        traverse(series, filter, raw_data.param.length - 2, '');
     }
     */
     for (var i = 0; i < series.length; i++) {
         var grouped_series = data_transform(series[i], overlay_list, 'non-overlay');
         console.log(grouped_series);
         for (var k in grouped_series) {
-            simple_plot(data.params, grouped_series[k], overlay_list);
+            simple_plot(raw_data.params, grouped_series[k], overlay_list);
         }
     }
 }
