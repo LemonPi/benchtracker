@@ -41,20 +41,20 @@ function generate_overlay_selector(type) {
         form.append('label').text(choice[i]).append('br');
     }
     form.append('button').attr('type', 'button').attr('id', 'overlay_submission').text('Get Plot!');
-    $('#overlay_submission').click(function () {var checkbox = form.selectAll('input', '[type="checkbox"]');
-                                                checkbox.each(function () {if (d3.select(this).property('checked')) {
+    $('#overlay_submission').click(function () {overlay_list = [];
+                                                var checkbox = form.selectAll('input', '[type="checkbox"]');
+                                                checkbox.each(function () {
+                                                                           if (d3.select(this).property('checked')) {
                                                                                overlay_list.push(d3.select(this).attr('index'));
-                                                                               console.log('get index');
-                                                                               console.log(d3.select(this).attr('index'));
                                                                            }
                                                                          });
-                                                plot_generator();} );
+                                                plot_generator(type);} );
 }
 function simple_plot(params, series, overlay_list) {
     // setup plot name
     var plot_name = "";
     for (var i = 2; i < series[0].length; i ++){
-        if (!(i-2 in overlay_list)) {
+        if ($.inArray(i-2+'', overlay_list) == -1) {
             plot_name += series[0][i];
             plot_name += '  ';
         }
@@ -115,10 +115,13 @@ function sinAndCos() {
 }
 */
 function plot_generator(type) {
+    // clear up
+    d3.select('#chart').html('');
     var series = raw_data.data;
-    console.log("================================");
-    console.log(series);
+    //console.log("================================");
+    //console.log(series);
     // filter is an array of array: filter[i][*] stores all possible values of axis i
+    // TODO: I am actually not using filter. 
     var filter = [];
     for (var t = 0; t < raw_data.tasks.length; t++) {
         for (var i = 0; i < raw_data.params.length - 2; i++) {
@@ -127,6 +130,7 @@ function plot_generator(type) {
                 temp.add(raw_data.data[t][j][i+2]);
             }
             var filt_name = [];
+            // convert set to list
             for (v of temp) {
                 filt_name.push(v);
             }
@@ -135,16 +139,11 @@ function plot_generator(type) {
             console.log("filt_temp " + filt_name);
         }
     }
-    /*
-    // task dir
-    for (var i = 0; i < raw_data.tasks.length; i++) {
-        alert("task name: " + raw_data.tasks[i]);
-        // traverse all possible combinations of all filter axes
-        traverse(series, filter, raw_data.param.length - 2, '');
-    }
-    */
+    // traverse all tasks
     for (var i = 0; i < series.length; i++) {
         var grouped_series = data_transform(series[i], overlay_list, 'non-overlay');
+        console.log(">>>>>");
+        console.log(overlay_list);
         console.log(grouped_series);
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list);
@@ -161,7 +160,7 @@ function data_transform (series, overlay_list, mode) {
     if (mode == 'non-overlay') {
         return _.groupBy(series, function (dot_info) {  axis_group = "";
                                                         for (var i = 2; i < dot_info.length; i++) {
-                                                            if (!(i-2 in overlay_list)){
+                                                            if ($.inArray(i-2+"", overlay_list) == -1){
                                                                 axis_group += dot_info[i];
                                                             } 
                                                         }   
@@ -170,7 +169,7 @@ function data_transform (series, overlay_list, mode) {
     } else {
         return _.groupBy(series, function (dot_info) {  axis_group = "";
                                                         for (var i = 2; i < dot_info.length; i++) {
-                                                            if (i-2 in overlay_list){
+                                                            if ($.inArray(i-2+"", overlay_list) > -1){
                                                                 axis_group += dot_info[i];
                                                             } 
                                                         }   
