@@ -2,19 +2,22 @@ body {
 	margin:0;
 	font-family:verdana;
 }
+html {
+	overflow-y:scroll;
+}
 .box_wrapper {
 	height:50%;
 	overflow:hidden;
 	width:20%;
 	display:inline-block;
-	margin-right:-4px;
+	margin-right:-14px;
 	font-size:16px;
 }
 .selection_box {
 	height:100%;
 	width:100%;
-	overflow:auto;
-	padding-right: 20px;
+	overflow-y:scroll;
+	padding-right: 18px;
 }
 .task {
 	display:block;
@@ -27,42 +30,50 @@ body {
 .sel_task {
 	font-weight:bold;
 	color:white;
-	background-color:grey;
+	background-color:#5A4A3A;
 }
+.param {
+	padding-left:10px;
+	display:block;
+	line-height:1.5em;
+	cursor:pointer;
+}
+.sel_param {
+	font-weight:bold;
+	background-color:#3B3738;
+}
+
+
 .filter {
-	background-color: white;
+	background-color:#3B3738;
 }
 .box_header {
 	text-align:center;
 }
 #selection_bar {
 	width:100%;
-	/*height:50%;*/
 	overflow-y:hidden;
 	overflow-x:auto;
 	font-size:0;
 }
 #task_select {
 }
-#task_select select {
-	padding:10px; margin:-5px -20px -5px -5px;
-}
 #x_box {
-	background-color: azure;
+	background-color:#5A4A3A;
+	color:white;
 }
 #y_box {
-	background-color: aliceblue;
+	background-color:#5A4A3A;
+	color:white;
 }
 #add_filter {
 	cursor: pointer;
-	background-color: crimson;
+	background-color: #EA7B30;
 	text-align:center;
 	width:100px;
 	visibility:hidden;
 }
 #display_canvas {
-	height:100%;
-	width:100%;
 	left:0px;
 }
 
