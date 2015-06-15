@@ -74,8 +74,10 @@ function populate_param_windows() {
 		label.appendChild(document.createTextNode(p_pair[0]));
 		label.appendChild(document.createElement('br'));
 		x_param.appendChild(label);
-		label_y = label.cloneNode(true);
-		y_param.appendChild(label_y);
+		if (p_pair[1] !== "TEXT") {
+			label_y = label.cloneNode(true);
+			y_param.appendChild(label_y);
+		}
 	}
 	report_debug("populated param windows");
 }
