@@ -1,12 +1,18 @@
-/*
-$(document).ready(function () {
-   $("#plot").click(function(){simple_plot();}); 
-});
-*/
+// TODO:
+// 1. auto-resizing graph, change the axis range
+// 2. set axis range, set title
+// 3. gmean
+// 5. save graph
+// 4. fix the offline plotter
+
+// Some const
+// if x axis is an element of timeParam, then the default behavior is to gmean everything
+var timeParam = ['run', 'parsed_date', 'fc'];
 // create the actual plot in the display_canvas
 //
 var overlay_list = [];
 // raw data means it is not processed by gmean, and its param name has not been manipulated.
+// NOTE: we don't store the data of default plot (cuz they are not manipulated)
 var raw_data = null;
 var gmean_data = null;
 function plotter_setup(data) {
@@ -18,10 +24,55 @@ function plotter_setup(data) {
     raw_data = data;
     gmean_data = null;
     overlay_list = [];
-    generate_overlay_selector('raw');
+    // check is x is run / parsed_date
+    // if yes, then geomean on everything
+    // if not, then supress on params that will generate the least subplots
+    if (timeParam.indexOf(raw_data.params[0]) !== -1) {
+        // geomean on everything. 
+        defaultToTimeGmeanPlot();
+        // possibly show the generate_overlay_selector as well
+    } else {
+        // choose the axis with the most distinct values and overlay on it
+        generate_overlay_selector('raw');
+    }
 }
-
-// type is to used to decide whether to generate axes of raw data or gmean data
+/*
+ * generate the default plot if x axis is time
+ * methodology: gmean over everything
+ */
+function defaultToTimeGmeanPlot() {
+    // flattenedData = _.flatten(raw_data, true);
+    for (var i = 0; i < raw_data.data.length; i++) {
+        groupedX = _.groupBy(raw_data.data[i], function (dotSeries) {return dotSeries[0]} );
+        seriesXY = [];
+        for (k in groupedX) {
+            // groupedX: eliminate all other irrelevant values
+            groupedX[k] = _.map(groupedX[k], function (list) {return list[1];} );
+            // count the number of tuples with the valid y value
+            var validCount = 0;
+            groupedX[k] = _.reduce( groupedX[k], 
+                                    function (memo, num) {
+                                        if (num > 0) {
+                                            memo *= num;
+                                            validCount += 1;
+                                        }
+                                        return memo;
+                                    }, 
+                                    1);
+            // setup the gmean entry for groupedX
+            groupedX[k] = (validCount > 0) ? Math.pow(groupedX[k], 1.0/validCount) : -1;
+            // now {x1: y1, x2: y2, ...}
+            // should convert it [[x1,y1],[x2,y2],...]
+            seriesXY.push([k, groupedX[k]]);
+        }
+        simple_plot(raw_data.params, seriesXY, []);
+    }
+}
+/*
+ * to generate the overlay selector panel
+ * the plot will be generated after button is clicked.
+ *  type is to used to decide whether to generate axes of raw data or gmean data
+ */
 function generate_overlay_selector(type) {
     var selector_div = d3.select('#overlay_select');
     // clear up
@@ -50,6 +101,54 @@ function generate_overlay_selector(type) {
                                                                          });
                                                 plot_generator(type);} );
 }
+
+
+
+
+function plot_generator(type) {
+    // clear up
+    d3.select('#chart').html('');
+    var series = raw_data.data;
+    //console.log("================================");
+    //console.log(series);
+    // filter is an array of array: filter[i][*] stores all possible values of axis i
+    // TODO: I am actually not using filter. 
+    var filter = [];
+    for (var t = 0; t < raw_data.tasks.length; t++) {
+        for (var i = 0; i < raw_data.params.length - 2; i++) {
+            var temp = new Set();
+            for (var j = 0; j < raw_data.data[t].length; j++) {
+                temp.add(raw_data.data[t][j][i+2]);
+            }
+            var filt_name = [];
+            // convert set to list
+            for (v of temp) {
+                filt_name.push(v);
+            }
+            filter.push(filt_name);
+            console.log("filt_name: " + raw_data.params[i+2]);
+            console.log("filt_temp " + filt_name);
+        }
+    }
+    // traverse all tasks
+    for (var i = 0; i < series.length; i++) {
+        var grouped_series = data_transform(series[i], overlay_list, 'non-overlay');
+        console.log(">>>>>");
+        console.log(overlay_list);
+        console.log(grouped_series);
+        for (var k in grouped_series) {
+            simple_plot(raw_data.params, grouped_series[k], overlay_list);
+        }
+    }
+}
+
+/*
+ * Utility function, called by plot_generator()
+ * actually generating plot by calling d3 function
+ * params: raw_data.params
+ * series: in the format of list of list (list of tuples)
+ * overlay_list: a list of index(int)
+ */
 function simple_plot(params, series, overlay_list) {
     // setup plot name
     var plot_name = "";
@@ -104,52 +203,6 @@ function simple_plot(params, series, overlay_list) {
         nv.utils.windowResize(function() { chart.update(); } );
     });
 }
-/*
-function sinAndCos() {
-    var sin = [];
-    for (var i = 0; i < 100; i++) {
-        sin.push({x: i, y: Math.sin(i/10)});
-    }
-    return [{values: sin, key: 'sine wave', color: '#ff7f0e'}];
-
-}
-*/
-function plot_generator(type) {
-    // clear up
-    d3.select('#chart').html('');
-    var series = raw_data.data;
-    //console.log("================================");
-    //console.log(series);
-    // filter is an array of array: filter[i][*] stores all possible values of axis i
-    // TODO: I am actually not using filter. 
-    var filter = [];
-    for (var t = 0; t < raw_data.tasks.length; t++) {
-        for (var i = 0; i < raw_data.params.length - 2; i++) {
-            var temp = new Set();
-            for (var j = 0; j < raw_data.data[t].length; j++) {
-                temp.add(raw_data.data[t][j][i+2]);
-            }
-            var filt_name = [];
-            // convert set to list
-            for (v of temp) {
-                filt_name.push(v);
-            }
-            filter.push(filt_name);
-            console.log("filt_name: " + raw_data.params[i+2]);
-            console.log("filt_temp " + filt_name);
-        }
-    }
-    // traverse all tasks
-    for (var i = 0; i < series.length; i++) {
-        var grouped_series = data_transform(series[i], overlay_list, 'non-overlay');
-        console.log(">>>>>");
-        console.log(overlay_list);
-        console.log(grouped_series);
-        for (var k in grouped_series) {
-            simple_plot(raw_data.params, grouped_series[k], overlay_list);
-        }
-    }
-}
 
 // we can choose a slightly more neat method: first group by all the axes
 // that is not overlaid, then do legend plot upon every group. this will
@@ -177,27 +230,4 @@ function data_transform (series, overlay_list, mode) {
                                                      } );
     }
 }
-/*
-// now we draw one line in each plot
-// eventually we should support overlay
-function traverse(series, filter, filt_index, plot_key) {
-    if (filt_index == 0) {
-        //do plotting
-        console.log("plotting");
-    } else {
-        for (var i = 0; i < filter[filt_index].length; i++) {
-            sub_series = subtract_series(series, filter[filt_index][i]);
-            traverse(sub_series, filter, filt_index-1, plot_key + filter[filt_index][i]);
-        }
-    }
-}
 
-
-// a better way to do this is to use the database "group by" clause: 
-// if so, you don't even need any sub_series
-// return series only with certain filt_key, and reduce one column which
-// corresponds the filt_key
-function subtract_series(series, filt_key) {
-    return sreies;
-}
-*/
