@@ -7,7 +7,7 @@
 
 // Some const
 // if x axis is an element of timeParam, then the default behavior is to gmean everything
-var timeParam = ['run', 'parsed_date', 'fc'];
+var timeParam = ['run', 'parsed_date'];
 // create the actual plot in the display_canvas
 //
 var overlay_list = [];
@@ -15,6 +15,12 @@ var overlay_list = [];
 // NOTE: we don't store the data of default plot (cuz they are not manipulated)
 var raw_data = null;
 var gmean_data = null;
+var range = {'x': [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY], 
+             'y': [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]};
+var plotSize = {'width': 650, 'height': 500};
+var plotMargin = {'left': 100, 'right': 40, 'top': 70, 'bottom': 70};
+// a list of svg elements in d3 type: used for future plot manipulation
+var chartList = [];
 function plotter_setup(data) {
     if (data.status !== 'OK') {
         report_error(data.status);
@@ -63,7 +69,7 @@ function defaultToTimeGmeanPlot() {
             groupedX[k] = (validCount > 0) ? Math.pow(groupedX[k], 1.0/validCount) : -1;
             // now {x1: y1, x2: y2, ...}
             // should convert it [[x1,y1],[x2,y2],...]
-            seriesXY.push([k, groupedX[k]]);
+            seriesXY.push([k, groupedX[k], raw_data.tasks[i]]);
         }
         simple_plot(raw_data.params, seriesXY, []);
     }
@@ -109,8 +115,6 @@ function plot_generator(type) {
     // clear up
     d3.select('#chart').html('');
     var series = raw_data.data;
-    //console.log("================================");
-    //console.log(series);
     // filter is an array of array: filter[i][*] stores all possible values of axis i
     // TODO: I am actually not using filter. 
     var filter = [];
@@ -136,8 +140,21 @@ function plot_generator(type) {
         console.log(">>>>>");
         console.log(overlay_list);
         console.log(grouped_series);
+        range['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+        range['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+        findAxisScale(grouped_series);
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list);
+        }
+    }
+}
+function findAxisScale(series) {
+    for (var k in series) {
+        for (var i = 0; i < series[k].length; i++) {
+            range['x'][0] = (range['x'][0] > series[k][i][0]) ? series[k][i][0] : range['x'][0];
+            range['x'][1] = (range['x'][1] < series[k][i][0]) ? series[k][i][0] : range['x'][1];
+            range['y'][0] = (range['y'][0] > series[k][i][1]) ? series[k][i][1] : range['y'][0];
+            range['y'][1] = (range['y'][1] < series[k][i][1]) ? series[k][i][1] : range['y'][1];
         }
     }
 }
@@ -171,29 +188,29 @@ function simple_plot(params, series, overlay_list) {
     }
     nv.addGraph(function() {
        var chart = nv.models.lineChart()
-                            .margin({left:100, top:100}) 
+                            .margin(plotMargin) 
                             .useInteractiveGuideline(true)
                             .showLegend(true)
                             .showYAxis(true)
                             .showXAxis(true);
+        chart.forceX(range['x']);
+        chart.forceY(range['y']);
+        chartList.push(chart);
         chart.xAxis.axisLabel(params[0])
                    .tickFormat(d3.format(',r'));
         chart.yAxis.axisLabel(params[1])
                    .tickFormat(d3.format('.02f'));
         chart.legend.margin({top:30});
-        var width = 600;
-        var height = 300;
-        //var title = d3.select('#chart').append('h2').attr('align', 'center').text(plot_name);
         var svg = d3.select('#chart')
                     .append('svg').attr('id', plot_name)
-                    .attr('height', 300).attr('width', 600);
+                    .attr('height', plotSize['height']).attr('width', plotSize['width']);
         /*
         var $svg = $(document.getElementById(plot_name));
         $svg.parent().append('<div class="chart-title">' + plot_name + '</div>');
         */
         //$(svg).parent().append('<div class="chart-title">' + plot_name + '</div>');
         svg.append("text")
-           .attr("x", width/2)
+           .attr("x", plotSize['width']/2)
            .attr("y", 20)
            .attr("text-anchor", "middle")
            .attr("class", "chart-title")
@@ -230,4 +247,5 @@ function data_transform (series, overlay_list, mode) {
                                                      } );
     }
 }
+
 
