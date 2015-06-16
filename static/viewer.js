@@ -120,14 +120,14 @@ function create_filter_window() {
 
 	// create close button
 	var close = document.createElement('a');
-	close.className = "close attractive_button";
-	close.text = 'delete filter';
+	close.className = "close";
+	close.text = 'X';
 	close.addEventListener('click', remove_filter, false);
 
 	filter.appendChild(select_param);
 	filter.appendChild(close);
 	var wrapper = document.createElement('div');
-	wrapper.className = "box_wrapper";
+	wrapper.className = "box_wrapper filter_wrapper";
 	wrapper.appendChild(filter);
 	sel_bar.insertBefore(wrapper, add_filter);
 }
