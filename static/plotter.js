@@ -159,6 +159,119 @@ function findAxisScale(series) {
     }
 }
 
+function simple_plot(params, series, overlay_list) {
+    //setup data
+    var lineData = data_transform(series, overlay_list, 'overlay');
+    var lineInfo = [];
+    for (k in lineData) {
+        var lineVal = [];
+        for (var j = 0; j < lineData[k].length; j ++ ){
+            lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
+        }
+        lineVal = _.sortBy(lineVal, 'x');
+        lineInfo.push({values: lineVal, key: k});
+    }
+    // plot
+    var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
+    var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
+
+    var x = d3.scale.linear()
+        .domain(range['x'])
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .domain(range['y'])
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .tickSize(-height);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(5)
+        .tickSize(-width);
+
+    var zoom = d3.behavior.zoom()
+        .x(x)
+        .y(y)
+        .scaleExtent([1, 10])
+        .on("zoom", zoomed);
+
+    var svg = d3.select('#chart').append('svg')
+        .attr("width", width + plotMargin['left'] + plotMargin['right'])
+        .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
+      .append("g")
+        .attr("transform", "translate(" + plotMargin['left'] + "," + plotMargin['top'] + ")")
+        .call(zoom);
+
+    var canvas = svg.append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+    //.on("click", reset);
+
+    var lineGen = d3.svg.line()
+                    .x(function(d) {return x(d['x']);})
+                    .y(function(d) {return y(d['y']);});
+    /*
+    svg.append('svg').attr('top', 0).attr('left', 0)
+       .attr('width', width).attr('height', height)
+       .attr('viewBox', '0 0 '+width+' '+height)
+       .attr('class', 'line')
+       .append('path').attr('class', 'line')
+       .attr('d', lineGen(test));
+    */
+    var clip = svg.append('svg:clipPath').attr('id', 'clip').append('svg:rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', height);
+    for (var i in lineInfo){
+        svg.append('g').attr('clip-path', 'url(#clip)').append('svg:path').datum(lineInfo[i]['values']).attr('class', 'line').attr('d', lineGen);
+
+    }
+    // add title
+    var plot_name = "";
+    for (var i = 2; i < series[0].length; i ++){
+        if ($.inArray(i-2+'', overlay_list) == -1) {
+            plot_name += series[0][i];
+            plot_name += '  ';
+        }
+    }
+
+    svg.append("text")
+       .attr("x", width/2)
+       .attr("y", -10)
+       .attr("text-anchor", "middle")
+       .attr("class", "chart-title")
+       .style("font-size", "16px")
+       .text(plot_name);
+
+    function zoomed() {
+      svg.select(".x.axis").call(xAxis);
+      svg.select(".y.axis").call(yAxis);
+      svg.selectAll('.line').attr('class', 'line').attr('d', lineGen);
+    }
+
+    function reset() {
+      d3.transition().duration(750).tween("zoom", function() {
+        var ix = d3.interpolate(x.domain(), [-width / 2, width / 2]),
+            iy = d3.interpolate(y.domain(), [-height / 2, height / 2]);
+        return function(t) {
+          zoom.x(x.domain(ix(t))).y(y.domain(iy(t)));
+          zoomed();
+        };
+      });
+    }
+}
 /*
  * Utility function, called by plot_generator()
  * actually generating plot by calling d3 function
@@ -166,6 +279,7 @@ function findAxisScale(series) {
  * series: in the format of list of list (list of tuples)
  * overlay_list: a list of index(int)
  */
+/*
 function simple_plot(params, series, overlay_list) {
     // setup plot name
     var plot_name = "";
@@ -204,10 +318,10 @@ function simple_plot(params, series, overlay_list) {
         var svg = d3.select('#chart')
                     .append('svg').attr('id', plot_name)
                     .attr('height', plotSize['height']).attr('width', plotSize['width']);
-        /*
-        var $svg = $(document.getElementById(plot_name));
-        $svg.parent().append('<div class="chart-title">' + plot_name + '</div>');
-        */
+        
+        //var $svg = $(document.getElementById(plot_name));
+        //$svg.parent().append('<div class="chart-title">' + plot_name + '</div>');
+        
         //$(svg).parent().append('<div class="chart-title">' + plot_name + '</div>');
         svg.append("text")
            .attr("x", plotSize['width']/2)
@@ -220,7 +334,7 @@ function simple_plot(params, series, overlay_list) {
         nv.utils.windowResize(function() { chart.update(); } );
     });
 }
-
+*/
 // we can choose a slightly more neat method: first group by all the axes
 // that is not overlaid, then do legend plot upon every group. this will
 // not require any recursive function.
