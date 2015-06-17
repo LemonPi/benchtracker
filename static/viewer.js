@@ -22,10 +22,7 @@ var task_select = document.getElementById("task_select").getElementsByClassName(
 for (var i=0; i < task_select.length; ++i) {
 	task_select[i].addEventListener('click', function(e) {
 		e.preventDefault();
-		task_cached = "";
-		if (this.className === "task") {tasks.add(this.title); this.className = "task sel_task";}
-		else {tasks.delete(this.title); this.className = "task";}
-		update_params();
+		toggle_task(this);
 	});
 }
 
@@ -80,28 +77,25 @@ function populate_param_windows() {
 			var val_y = val.cloneNode(true);
 			val_y.addEventListener('click', function(e) {
 				e.preventDefault();
-				if (this.className === "param") {
-					if (y_sel) y_sel.className = "param"; 
-					y_sel = this; 
-					this.className = "param sel_param";
-				}
-				else {this.className = "param"; y_sel = "";}
+				toggle_y(this);
 			}, false);
 			y_param.appendChild(val_y);
 		}
 
 		val.addEventListener('click', function(e) {
 			e.preventDefault();
-			// clear previous selected x
-			if (this.className === "param") { 
-				if (x_sel) x_sel.className = "param";
-				x_sel = this; 
-				this.className = "param sel_param";
-			}
-			else {this.className = "param"; x_sel = "";}
+			toggle_x(this);
 		}, false);
 		x_param.appendChild(val);
 	}
+	if (x_sel && (typeof x_sel === "string")) {
+		var x = x_param.querySelector(["a[title='", x_sel, "']"].join(""));
+		if (x) toggle_x(x);
+	} 
+	if (y_sel && (typeof y_sel === "string")) {
+		var y = y_param.querySelector(["a[title='", y_sel, "']"].join(""));
+		if (y) toggle_y(y);
+	} 	
 	report_debug("populated param windows");
 }
 
@@ -130,6 +124,8 @@ function create_filter_window() {
 	wrapper.className = "box_wrapper filter_wrapper";
 	wrapper.appendChild(filter);
 	sel_bar.insertBefore(wrapper, add_filter);
+
+	return filter;
 }
 
 // actions upon clicking the generate plot button
@@ -262,10 +258,34 @@ function create_filter_val(target, data) {
 		filter_val.appendChild(max);
 	}	
 	target.appendChild(filter_val);
+
+	return filter_val;
 }
 
 
-
+// click functions
+function toggle_task(task) {
+	task_cached = "";
+	if (task.className === "task") {tasks.add(task.title); task.className = "task sel_task";}
+	else {tasks.delete(task.title); task.className = "task";}
+	update_params();
+}
+function toggle_y(selected_y) {	
+	if (selected_y.className === "param") {
+		if (y_sel) y_sel.className = "param"; 
+		y_sel = selected_y; 
+		selected_y.className = "param sel_param";
+	}
+	else {selected_y.className = "param"; y_sel = "";}
+}
+function toggle_x(selected_x) {	
+	if (selected_x.className === "param") {
+		if (x_sel) x_sel.className = "param"; 
+		x_sel = selected_x; 
+		selected_x.className = "param sel_param";
+	}
+	else {selected_x.className = "param"; x_sel = "";}
+}
 
 
 // utility functions

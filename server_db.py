@@ -80,8 +80,18 @@ def get_filtered_data():
 @app.route('/view')
 def get_view():
     tasks = {task_name: task_context for (task_name, task_context) in [t.split('|',1) for t in d.list_tasks()]}
+    queried_tasks = parse_tasks()
+    x = y = ""
+    # only pass other argument values if valid tasks selected
+    if queried_tasks:
+        x = request.args.get('x')
+        y = request.args.get('y') 
+
     return render_template('viewer.html',
-                            tasks=tasks)
+                            tasks=tasks,
+                            queried_tasks=queried_tasks,
+                            queried_x = x,
+                            queried_y = y)
 
 @app.errorhandler(404)
 def not_found(error):
@@ -90,7 +100,7 @@ def not_found(error):
 
 def parse_tasks():
     tasks = request.args.getlist('t')
-    if tasks[0].isdigit():
+    if tasks and tasks[0].isdigit():
         all_tasks = d.list_tasks()
         tasks = [all_tasks[int(t)] for t in tasks]
     return tasks

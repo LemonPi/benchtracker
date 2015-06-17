@@ -9,6 +9,7 @@ import argparse
 import textwrap
 
 def list_tasks(dbname = "results.db"):
+    """Return a list of all task names in a database"""
     db = connect_db(dbname)
     cursor = db.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -16,6 +17,7 @@ def list_tasks(dbname = "results.db"):
 
 
 def describe_tasks(tasks, dbname = "results.db"):
+    """Return a list of all shared parameters for some tasks of a database"""
     db = connect_db(dbname)
     cursor = db.cursor()
     if not isinstance(tasks,list):
@@ -36,21 +38,16 @@ def describe_tasks(tasks, dbname = "results.db"):
             shared_params = params
     return shared_params
     
-def retrieve_primary_keys(task, db):
-    cursor = db.cursor()
-    cursor.execute("PRAGMA table_info(%s)" % task_name(task))
-    column_info = cursor.fetchall()
-    primary_keys = []
-    for info in column_info:
-        print(info)
-        if info[5] != 0:
-            print("key param:", info[1])
-            primary_keys.append(info[1])
 
-    return primary_keys
-
-# can only have 1 x param but arbitrary amounts of y_params and filters
 def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
+    """
+    Return a list of selected parameters and a data structure (list of list of tuples),
+
+    - 1st index corresponds to the task,
+    - 2nd index corresponds to the row,
+    - 3rd index corresponds to the selected parameter.
+    The key parameters that define a benchmark are always selected.
+    """
     db = connect_db(dbname)
     data = []
 
@@ -99,9 +96,15 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
     return cols_to_select, data
 
 
-# give back metainformation about a parameter to allow easier filtering
-# param would be an element of the list returned by describe_tasks
 def describe_param(param, mode, tasks, dbname = "results.db"):
+    """
+    Give back metainformation about a parameter to allow for easier filtering.
+    
+    Param would be an element of the list returned by describe_tasks - space separated name and type
+    Returns a 2-tuple describing the parameter type and values for some tasks of a database.
+    - 1st value is either 'range' or 'categorical'
+    - 2nd value is either a 2-tuple for range types, or a n-tuple for categorical
+    """
     db = connect_db(dbname)
     cursor = db.cursor()
 
@@ -142,8 +145,8 @@ def describe_param(param, mode, tasks, dbname = "results.db"):
 
 
 
-# attempt a connection, exiting with 1 if dbname does not exist, else return with db connection
 def connect_db(dbname = "results.db"):
+    """Attempt a database connection, exiting with 1 if dbname does not exist, else return with db connection"""
     if not os.path.isfile(dbname):
         print("{} does not exist".format(dbname))
         sys.exit(1)
@@ -172,7 +175,7 @@ class Task_filter:
         return "({} {} {})".format(self.param, self.method, substitutions)
         
 
-# utilities
+# internal utilities
 def task_name(task):
     return '['+task+']'
 def intersection(first, other):
@@ -183,4 +186,16 @@ def intersection(first, other):
 def sql_substitute(args):
     return ('?,'*len(args)).rstrip(',')
 
+def retrieve_primary_keys(task, db):
+    cursor = db.cursor()
+    cursor.execute("PRAGMA table_info(%s)" % task_name(task))
+    column_info = cursor.fetchall()
+    primary_keys = []
+    for info in column_info:
+        print(info)
+        if info[5] != 0:
+            print("key param:", info[1])
+            primary_keys.append(info[1])
+
+    return primary_keys
 

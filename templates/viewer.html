@@ -43,4 +43,27 @@
 
 </body>
 
+<script>
+$(document).ready(function() {
+
+
+report_debug(x_param);
+
+{% if queried_x %}
+	x_sel = '{{queried_x}}';
+{% endif %}
+{% if queried_y %}
+	y_sel = '{{queried_y}}';
+	report_debug("querried y");
+{% endif %}
+
+{% for task in queried_tasks %}
+	var t = task_select.querySelector("a[title='{{task}}']");
+	if (t) toggle_task(t);
+{% endfor %}
+
+
+});
+</script>
+
 </html>
