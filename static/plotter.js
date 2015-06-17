@@ -5,6 +5,9 @@
 // 5. save graph
 // 4. fix the offline plotter
 
+//PROBLEM:
+// 1. have to make sure x and y are numbers --> convert string
+
 // Some const
 // if x axis is an element of timeParam, then the default behavior is to gmean everything
 var timeParam = ['run', 'parsed_date'];
@@ -47,6 +50,7 @@ function plotter_setup(data) {
  * methodology: gmean over everything
  */
 function defaultToTimeGmeanPlot() {
+    d3.select('#chart').html('');
     // flattenedData = _.flatten(raw_data, true);
     for (var i = 0; i < raw_data.data.length; i++) {
         groupedX = _.groupBy(raw_data.data[i], function (dotSeries) {return dotSeries[0]} );
@@ -69,8 +73,12 @@ function defaultToTimeGmeanPlot() {
             groupedX[k] = (validCount > 0) ? Math.pow(groupedX[k], 1.0/validCount) : -1;
             // now {x1: y1, x2: y2, ...}
             // should convert it [[x1,y1],[x2,y2],...]
-            seriesXY.push([k, groupedX[k], raw_data.tasks[i]]);
+            seriesXY.push([Number(k), groupedX[k], raw_data.tasks[i]]);
         }
+        range['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+        range['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+        findAxisScale(seriesXY);
+
         simple_plot(raw_data.params, seriesXY, []);
     }
 }
@@ -142,24 +150,26 @@ function plot_generator(type) {
         console.log(grouped_series);
         range['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         range['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
-        findAxisScale(grouped_series);
+        for (var k in grouped_series) {
+            findAxisScale(grouped_series[k]);
+        }
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list);
         }
     }
 }
 function findAxisScale(series) {
-    for (var k in series) {
-        for (var i = 0; i < series[k].length; i++) {
-            range['x'][0] = (range['x'][0] > series[k][i][0]) ? series[k][i][0] : range['x'][0];
-            range['x'][1] = (range['x'][1] < series[k][i][0]) ? series[k][i][0] : range['x'][1];
-            range['y'][0] = (range['y'][0] > series[k][i][1]) ? series[k][i][1] : range['y'][0];
-            range['y'][1] = (range['y'][1] < series[k][i][1]) ? series[k][i][1] : range['y'][1];
-        }
+    for (var i = 0; i < series.length; i++) {
+        range['x'][0] = (range['x'][0] > series[i][0]) ? series[i][0] : range['x'][0];
+        range['x'][1] = (range['x'][1] < series[i][0]) ? series[i][0] : range['x'][1];
+        range['y'][0] = (range['y'][0] > series[i][1]) ? series[i][1] : range['y'][0];
+        range['y'][1] = (range['y'][1] < series[i][1]) ? series[i][1] : range['y'][1];
     }
 }
 
 function simple_plot(params, series, overlay_list) {
+    //console.log('//////////////');
+    //console.log(series);
     //setup data
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
@@ -171,6 +181,8 @@ function simple_plot(params, series, overlay_list) {
         lineVal = _.sortBy(lineVal, 'x');
         lineInfo.push({values: lineVal, key: k});
     }
+    console.log('/////lineInfo/////');
+    console.log(lineInfo);
     // plot
     var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
     var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
@@ -219,24 +231,29 @@ function simple_plot(params, series, overlay_list) {
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
-
+    svg.append('text').attr('class', 'x label').attr('text-anchor', 'middle')
+       .attr('x', width/2).attr('y', height+30).style('font-size','14px')
+       .text(params[0]);
+    svg.append('text').attr('class', 'y label').attr('text-anchor', 'middle')
+       .attr('x', -height/2).attr('y', -50).attr('dy', '.75em')
+       .attr('transform', 'rotate(-90)').style('font-size','14px')
+       .text(params[1]);
     //.on("click", reset);
-
+    //svg.append('button').attr('class', '')
     var lineGen = d3.svg.line()
                     .x(function(d) {return x(d['x']);})
                     .y(function(d) {return y(d['y']);});
-    /*
-    svg.append('svg').attr('top', 0).attr('left', 0)
-       .attr('width', width).attr('height', height)
-       .attr('viewBox', '0 0 '+width+' '+height)
-       .attr('class', 'line')
-       .append('path').attr('class', 'line')
-       .attr('d', lineGen(test));
-    */
-    var clip = svg.append('svg:clipPath').attr('id', 'clip').append('svg:rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', height);
+    var clip = svg.append('svg:clipPath').attr('id', 'clip')
+                  .append('svg:rect').attr('x', 0).attr('y', 0)
+                  .attr('width', width).attr('height', height);
+    //colors = ['blue', 'red', 'yellow', 'green', 'black', 'purple', 'gray'];
+    var color = d3.scale.category10();
     for (var i in lineInfo){
-        svg.append('g').attr('clip-path', 'url(#clip)').append('svg:path').datum(lineInfo[i]['values']).attr('class', 'line').attr('d', lineGen);
-
+        svg.append('g').attr('clip-path', 'url(#clip)').append('svg:path')
+           .datum(lineInfo[i]['values'])
+           .attr('class', 'line').attr('d', lineGen)
+           .style('stroke', function() {return color(lineInfo[i]['key']);});
+           //.attr('stroke', function(d,i){return colors[Math.floor((Math.random()*6)+1)]});
     }
     // add title
     var plot_name = "";
