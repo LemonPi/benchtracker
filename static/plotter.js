@@ -35,6 +35,7 @@ function plotter_setup(data) {
     gmean_data = null;
     overlay_list = [];
     d3.select('#chart').html('');
+    d3.select('#overlay_select').html('');
     // check is x is run / parsed_date
     // if yes, then geomean on everything
     // if not, then supress on params that will generate the least subplots
@@ -108,7 +109,7 @@ function defaultToGmeanSubPlot() {
                 }
             }
             for (var i in data) {
-                simple_plot(raw_data.params, data[i], []);
+                //simple_plot(raw_data.params, data[i], []);
                 // convert data again to support overlay again
                 for (var j in data[i]) {
                     var paramSplit = data[i][j][2].split('  ');
@@ -124,12 +125,12 @@ function defaultToGmeanSubPlot() {
                     newRawData.push(data[i][j]);
                 }
             }
-            /*
-            newOverlayList = [findMostExpensiveAxis(newRawData, newParams)];
+            
+            newOverlayList = [findMostExpensiveAxis(newRawData, newParams) + ''];
             var newData = data_transform(newRawData, newOverlayList, 'non-overlay');
             for (k in newData) {
                 simple_plot(newParams, newData[k], newOverlayList);
-            }*/
+            }
         }
         d3.select('#chart').append('button').attr('type', 'button').attr('id', 'customizePlot').text('customize plot');
         $('#customizePlot').click(function () {d3.select('#chart').html(''); 
@@ -213,7 +214,7 @@ function findMostExpensiveAxis(rawData, params) {
             maxIndex = i;
         }
     }
-    return i;
+    return maxIndex;
 }
 
 function plot_generator(type) {
