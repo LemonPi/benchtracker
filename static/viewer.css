@@ -18,12 +18,15 @@ select {
     -moz-appearance: none;
     appearance: none;
 }
+select:focus {
+    outline: 0;
+}
 .box_wrapper {
-	height:50%;
+	height:350px;
 	overflow:hidden;
 	width:20%;
 	display:inline-block;
-	margin-right:-14px;
+	margin-right:-18px;
 	font-size:16px;
 	position:relative;
 }
@@ -33,7 +36,8 @@ select {
 	height:100%;
 	width:100%;
 	overflow-y:scroll;
-	padding-right: 18px;
+	overflow-x:hidden;
+	padding-right: 20px;
 }
 
 .task {
@@ -50,6 +54,7 @@ select {
 	background-color:#5A4A3A;
 }
 
+
 .param {
 	padding-left:10px;
 	display:block;
@@ -65,6 +70,14 @@ select {
 .filter {
 	background-color:#3B3738;
 }
+.filter_val input[type="text"] {
+  padding: 10px;
+  background-color:transparent;
+  border-width:0px;
+  color:white;
+}
+
+
 .in {
 	height:59%;
 }
@@ -153,3 +166,8 @@ rect {
     stroke-width: 1.5px;
 }
 
+@media screen and (-webkit-min-device-pixel-ratio:0) { 
+	.filter_param option, .filter_sel option {
+		background-color: #3B3738;
+	}
+}

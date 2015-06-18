@@ -33,15 +33,6 @@ def main():
     db.close()
 
 
-def catch_operation_errors(func):
-    def run_checker(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except OSError:
-            print("file not found, skipping (rest should still run)!")
-            return
-    return run_checker
-
 def verify_paths(params):
     """verify paths exist as either relational or absolute paths, modifying them if necessary"""
     if os.path.isdir(params.task_dir):
@@ -66,11 +57,15 @@ def update_db(params, db):
 consider running with --clean to remake task table".format(row[0], highest_run))
         # else first run, nothing in table yet
 
-    @catch_operation_errors
     def add_run_to_db(params, run):
         resfilename = get_result_file(params, run)
         run_number = get_trailing_num(run)
-        parsed_date = os.path.getmtime(resfilename)
+        try:
+            parsed_date = os.path.getmtime(resfilename)
+        except OSError:
+            print("file {} not found; skipping".format(resfilename))
+            return
+
 
         with open(resfilename, 'r') as res:
             # make sure table is compatible with run data by inserting any new columns
@@ -170,6 +165,10 @@ def create_table(params, db, task_table_name):
         print(create_table_command)
         cursor = db.cursor()
         cursor.execute(create_table_command)
+
+        # reinitialize tracked columns for newly created table
+        initialize_tracked_columns(params, db)
+
 
 def initialize_tracked_columns(params, db):
     cursor = db.cursor()
