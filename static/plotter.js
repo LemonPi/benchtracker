@@ -22,7 +22,7 @@ var gmean_data = null;
 var range = {'x': [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY], 
              'y': [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]};
 var plotSize = {'width': 650, 'height': 500};
-var plotMargin = {'left': 100, 'right': 40, 'top': 70, 'bottom': 70};
+var plotMargin = {'left': 100, 'right': 140, 'top': 70, 'bottom': 70};
 // a list of svg elements in d3 type: used for future plot manipulation
 var chartList = [];
 function plotter_setup(data) {
@@ -298,10 +298,11 @@ function data_transform (series, overlay_list, mode) {
         alert('data_transform: unknown mode');
     }
 }
-
+/*
+ * plotting function:
+ * using d3.js
+ */
 function simple_plot(params, series, overlay_list) {
-    //console.log('//////////////');
-    //console.log(series);
     //setup data
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
@@ -314,9 +315,11 @@ function simple_plot(params, series, overlay_list) {
         lineInfo.push({values: lineVal, key: k});
     }
     // plot
+    // width & heigth is the size of the actual plotting area
     var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
     var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
-
+    // ..............
+    // setup axis
     var x = d3.scale.linear()
         .domain(range['x'])
         .range([0, width]);
@@ -335,16 +338,19 @@ function simple_plot(params, series, overlay_list) {
         .orient("left")
         .ticks(5)
         .tickSize(-width);
-
+    // ...............
+    // behavior
     var zoom = d3.behavior.zoom()
         .x(x)
         .y(y)
         .scaleExtent([1, 10])
         .on("zoom", zoomed);
-
+    // ...............
+    // assemble
     var svg = d3.select('#chart').append('svg')
         .attr("width", width + plotMargin['left'] + plotMargin['right'])
         .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
+        .attr('shape-rendering', 'geometricPrecision')
       .append("g")
         .attr("transform", "translate(" + plotMargin['left'] + "," + plotMargin['top'] + ")")
         .call(zoom);
@@ -369,39 +375,65 @@ function simple_plot(params, series, overlay_list) {
        .attr('transform', 'rotate(-90)').style('font-size','14px')
        .text(params[1]);
     //.on("click", reset);
-    //svg.append('button').attr('class', '')
+    // .............
+    // add line
     var lineGen = d3.svg.line()
                     .x(function(d) {return x(d['x']);})
                     .y(function(d) {return y(d['y']);});
     var clip = svg.append('svg:clipPath').attr('id', 'clip')
                   .append('svg:rect').attr('x', 0).attr('y', 0)
                   .attr('width', width).attr('height', height);
-    //colors = ['blue', 'red', 'yellow', 'green', 'black', 'purple', 'gray'];
     var color = d3.scale.category10();
     for (var i in lineInfo){
         svg.append('g').attr('clip-path', 'url(#clip)').append('svg:path')
            .datum(lineInfo[i]['values'])
            .attr('class', 'line').attr('d', lineGen)
-           .style('stroke', function() {return color(lineInfo[i]['key']);});
-           //.attr('stroke', function(d,i){return colors[Math.floor((Math.random()*6)+1)]});
+           .style('stroke', function() {return color(lineInfo[i]['key']);}); // here each key is associated with a color --> for future legend
     }
+    // .............
+    // add legend
+    var legendSize = 14;
+    var legendMargin = 8;
+    var legend = svg.selectAll('.legend')
+                    .data(color.domain())   // this step is the key to legend
+                    .enter()
+                    .append('g')
+                    .attr('class', 'legend')
+                    .attr('transform', function (d, i) {
+                                           var height = legendSize + legendMargin;
+                                           //var offset = height * color.domain().length / 2;
+                                           var horz = width + 10;
+                                           var vert = i * height;
+                                           return 'translate(' + horz + ', ' + vert + ')';
+                                       });
+    legend.append('rect')
+          .attr('width', legendSize).attr('height', legendSize)
+          .style('fill', color).style('stroke', color);
+    legend.append('text')
+          .attr('x', legendSize + legendMargin).attr('y', legendSize - legendMargin)
+          .style('font-size', '12px')
+          .text(function(d) {return d;});
+    // .............
     // add title
-    var plot_name = "";
+    var cTitle = svg.append("text")
+                    .attr("x", width/2)
+                    .attr("y", -10)
+                    .attr("text-anchor", "middle")
+                    .attr("class", "chart-title")
+                    .style("font-size", "16px");
+
     for (var i = 2; i < series[0].length; i ++){
         if ($.inArray(i-2+'', overlay_list) == -1) {
-            plot_name += series[0][i];
-            plot_name += '  ';
+            cTitle.append('svg:tspan')
+                  .style('fill', 'rgb(111,111,111)')
+                  .text(params[i] + ':');
+            cTitle.append('svg:tspan')
+                  .style('font-weight', 'bold')
+                  .text('  '+series[0][i]+'  ');
         }
     }
-
-    svg.append("text")
-       .attr("x", width/2)
-       .attr("y", -10)
-       .attr("text-anchor", "middle")
-       .attr("class", "chart-title")
-       .style("font-size", "16px")
-       .text(plot_name);
-
+    // ..............
+    // interaction
     function zoomed() {
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis);
