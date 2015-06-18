@@ -52,8 +52,10 @@ def get_shared_params():
 @app.route('/data', methods=['GET'])
 @catch_operation_errors
 def get_filtered_data():
-    x_param = request.args.get('x')
-    y_param = request.args.get('y') 
+    # split to get name only in case type is also given
+    x_param = request.args.get('x').split()[0]
+    y_param = request.args.get('y').split()[0]
+    print(x_param, y_param);
 
     if not x_param:
         return jsonify({'status': 'Missing x parameter!'}) 
@@ -81,17 +83,20 @@ def get_filtered_data():
 def get_view():
     tasks = {task_name: task_context for (task_name, task_context) in [t.split('|',1) for t in d.list_tasks()]}
     queried_tasks = parse_tasks()
-    x = y = ""
+    x = y = filters = ""
     # only pass other argument values if valid tasks selected
     if queried_tasks:
         x = request.args.get('x')
         y = request.args.get('y') 
+        (temp, filters) = parse_filters(verbose=True)
+        
 
     return render_template('viewer.html',
                             tasks=tasks,
                             queried_tasks=queried_tasks,
                             queried_x = x,
-                            queried_y = y)
+                            queried_y = y,
+                            filters = filters)
 
 @app.errorhandler(404)
 def not_found(error):
@@ -105,7 +110,12 @@ def parse_tasks():
         tasks = [all_tasks[int(t)] for t in tasks]
     return tasks
 
-def parse_filters():
+def parse_filters(verbose=False):
+    """
+    Parse filter from current request query string and return the filtered parameters and filters in a list
+
+    verbose mode returns filters without splitting out the type
+    """
     filter_param = None
     filter_method = None
     filters = []
@@ -122,7 +132,11 @@ def parse_filters():
                 filter_args = []    # clear arguments; important!
                 print("{}: {}".format(filters[-1], filters[-1].args))
                 filter_params.append(filter_param)
-            filter_param = arg[1]
+            # split out the optional type following parameter name
+            if verbose:
+                filter_param = arg[1]
+            else:
+                filter_param = arg[1].split()[0]
 
         if arg[0] == 'fm':
             filter_method = arg[1]

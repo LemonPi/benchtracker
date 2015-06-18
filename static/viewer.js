@@ -100,7 +100,7 @@ function populate_param_windows() {
 }
 
 // actions upon adding a filter
-function create_filter_window() {
+function create_filter_window(selected) {
 	var sel_bar = document.getElementById('selection_bar');
 	var filter = document.createElement('div');
 	filter.className = "filter selection_box";
@@ -125,6 +125,17 @@ function create_filter_window() {
 	wrapper.appendChild(filter);
 	sel_bar.insertBefore(wrapper, add_filter);
 
+	report_debug(filter);
+
+	if (typeof selected === "string") {
+		report_debug("selected");
+		select_param.value = selected;
+		report_debug(select_param.value);
+		fire_event(select_param, "change"); 
+	}
+	else {report_debug(selected);}
+
+	report_debug("filter window created");
 	return filter;
 }
 
@@ -135,7 +146,7 @@ function generate_plot() {
 	if (!y_sel) {report_error("y parameter not selected"); return;}
 	report_debug("x_param: " + x_sel.title);
 	report_debug("y_param: " + y_sel.title);
-	data_query.push(x_sel.title.split(' ')[0], '&y=', y_sel.title.split(' ')[0], '&');
+	data_query.push(x_sel.title, '&y=', y_sel.title, '&');
 
 	var sel_bar = document.getElementById('selection_bar');
 
@@ -350,6 +361,16 @@ function get_selected(select) {
 	}
 	return result;
 }
+function set_selected(select, sels) {	// sels is a Set of selected values
+	var options = select && select.options;
+	var opt;
+	// unselect the prompt
+	options[0].selected = false;
+	for (var i=0, len=options.length; i < len; ++i) {
+		opt = options[i];
+		if (sels.has(opt.value)) opt.selected = true;
+	}
+}
 function create_selection(texts, values, prompt_text, multiple) {
 	var select = document.createElement('select');
 	if (multiple) select.multiple = true;
@@ -381,6 +402,20 @@ function create_task_query() {
 		report_debug("task cached");
 	}
 	return task_cached;
+}
+
+function fire_event(element, event) {
+    if (document.createEventObject) {
+	    // dispatch for IE
+	    var evt = document.createEventObject();
+	    return element.fireEvent('on'+event,evt);
+    }
+    else {
+	    // dispatch for firefox + others
+	    var evt = document.createEvent("HTMLEvents");
+	    evt.initEvent(event, true, true ); // event type,bubbling,cancelable
+	    return !element.dispatchEvent(evt);
+    }
 }
 
 function report_error(error) {
