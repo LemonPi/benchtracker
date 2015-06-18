@@ -263,8 +263,10 @@ function create_filter_val(target, data) {
 		min.type = max.type = "text";
 		min.className = "min";
 		max.className = "max";
-		min.placeholder = min.min = data.val[0];
-		max.placeholder = max.max = data.val[1];
+		min.min = data.val[0];
+		max.max = data.val[1];
+		min.placeholder = "min " + min.min;
+		max.placeholder = "max " + max.max;
 		filter_val.appendChild(min);
 		filter_val.appendChild(max);
 	}	
