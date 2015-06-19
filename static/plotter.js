@@ -384,11 +384,22 @@ function simple_plot(params, series, overlay_list) {
                   .append('svg:rect').attr('x', 0).attr('y', 0)
                   .attr('width', width).attr('height', height);
     var color = d3.scale.category10();
+    
     for (var i in lineInfo){
-        svg.append('g').attr('clip-path', 'url(#clip)').append('svg:path')
-           .datum(lineInfo[i]['values'])
-           .attr('class', 'line').attr('d', lineGen)
-           .style('stroke', function() {return color(lineInfo[i]['key']);}); // here each key is associated with a color --> for future legend
+        var svgg = svg.append('g').attr('clip-path', 'url(#clip)');
+        svgg.append('svg:path')
+            .datum(lineInfo[i]['values'])
+            .attr('class', 'line').attr('d', lineGen)
+            .style('stroke', function() {return color(lineInfo[i]['key']);}); // here each key is associated with a color --> for future legend
+        // TODO: add coordination
+        svgg.selectAll('.dots')
+            .data(lineInfo[i]['values']) 
+            .enter()
+            .append('circle')
+            .attr('class', 'dots')
+            .attr('r', 4)
+            .attr('fill', function() {return color(lineInfo[i]['key']);})
+            .attr('transform', function(d) {return 'translate(' + x(d['x'])+ ',' + y(d['y']) + ')'; });
     }
     // .............
     // add legend
@@ -438,6 +449,8 @@ function simple_plot(params, series, overlay_list) {
       svg.select(".x.axis").call(xAxis);
       svg.select(".y.axis").call(yAxis);
       svg.selectAll('.line').attr('class', 'line').attr('d', lineGen);
+      svg.selectAll('.dots').attr('transform', function(d) {
+          return 'translate(' + x(d['x']) + ',' + y(d['y']) + ')';});
     }
 
     function reset() {
