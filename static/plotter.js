@@ -2,8 +2,9 @@
 // 1. auto-resizing graph, change the axis range
 // 2. set axis range, set title
 // 3. gmean
+// 4. show coordinate
 // 5. save graph
-// 4. fix the offline plotter
+// 6. fix the offline plotter
 
 //PROBLEM:
 // 1. have to make sure x and y are numbers --> convert string
@@ -16,6 +17,7 @@ var defaultGmean = 'circuit';
 // create the actual plot in the display_canvas
 //
 var overlay_list = [];
+var gmean_list = [];
 // raw data means it is not processed by gmean, and its param name has not been manipulated.
 // NOTE: we don't store the data of default plot (cuz they are not manipulated)
 var raw_data = null;
@@ -40,6 +42,7 @@ function plotter_setup(data) {
     raw_data = data;
     gmean_data = null;
     overlay_list = [];
+    gmean_list = [];
     range = [];
     xNameMap = [];
     d3.select('#chart').html('');
@@ -69,7 +72,7 @@ function defaultToGmeanTimePlot() {
     for (var i = 0; i < raw_data.data.length; i++) {
         groupedX = _.groupBy(raw_data.data[i], function (dotSeries) {return dotSeries[0]} );
         seriesXY = [];
-        for (k in groupedX) {
+        for (var k in groupedX) {
             groupedX[k] = reduceToGmean(groupedX[k]);
             // now {x1: y1, x2: y2, ...}
             // should convert it [[x1,y1],[x2,y2],...]
@@ -93,10 +96,10 @@ function defaultToGmeanSubPlot() {
     var gmeanIndex = raw_data.params.indexOf(defaultGmean);
     if (gmeanIndex == -1) {
         alert('circuit (primary key) is not in the param list\ncheck if this is a bug');
-        generate_overlay_selector('raw');
+        generate_overlay_selector();
     } else if (gmeanIndex == 0 || gmeanIndex == 1) {
         alert('circuit is in x y axis: \nskip default plot');
-        generate_overlay_selector('raw');
+        generate_overlay_selector();
     } else {
         for (var k in raw_data.data) {
             var data = [];
@@ -104,12 +107,12 @@ function defaultToGmeanSubPlot() {
             range[k]['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
             range[k]['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
             gmeanPrepData = data_transform(raw_data.data[k], [(gmeanIndex-2)+''], 'non-overlay');
-            for (p in gmeanPrepData) {
+            for (var p in gmeanPrepData) {
                 // now gmeanPrepData[p] is a subplot overlaying on circuit
                 // next: gruop on x and gmean on y
                 var groupedX = data_transform(gmeanPrepData[p], [(0-2)+''], 'xy group');
                 var seriesXY = [];
-                for (l in groupedX) {
+                for (var l in groupedX) {
                     groupedX[l] = reduceToGmean(groupedX[l]);
                     seriesXY.push([l, groupedX[l], p]);
                 }
@@ -143,6 +146,7 @@ function defaultToGmeanSubPlot() {
             
             newOverlayList = [findMostExpensiveAxis(newRawData, newParams) + ''];
             var newData = data_transform(newRawData, newOverlayList, 'non-overlay');
+            d3.select('#chart').append('h3').append('text').text(raw_data.tasks[k]);
             for (j in newData) {
                 console.log('xNameMap[k]');
                 console.log('k = ', k);
@@ -152,7 +156,7 @@ function defaultToGmeanSubPlot() {
         }
         d3.select('#chart').append('button').attr('type', 'button').attr('id', 'customizePlot').text('customize plot');
         $('#customizePlot').click(function () {d3.select('#chart').html(''); 
-                                               generate_overlay_selector('raw');});
+                                               generate_overlay_selector();});
     }
 }
 /*
@@ -182,33 +186,53 @@ function reduceToGmean(groupedX) {
  * the plot will be generated after button is clicked.
  *  type is to used to decide whether to generate axes of raw data or gmean data
  */
-function generate_overlay_selector(type) {
+function generate_overlay_selector() {
     var selector_div = d3.select('#overlay_select');
     // clear up
     selector_div.html('');
-    var choice = null;
-    if (type == 'raw') {
-        choice = raw_data.params;
-    } else {
-        choice = gmean_data.params;
-    }
+    var choice = raw_data.params;
+    // choose overlay axis
     selector_div.append('h5').text('select overlay axis');
-    var form = selector_div.append('form').attr("id", "overlay_options").attr('action', '').append("fieldset");
-    form.append('legend').text('select overlay axes:');
+    var formOverlay = selector_div.append('form').attr("id", "overlay_options").attr('action', '').append("fieldset");
+    formOverlay.append('legend').text('select legend:');
     for (var i = 2; i < choice.length; i ++ ) {
         //var label = form.append('label').attr('class', 'param_label');
-        form.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
-        form.append('label').text(choice[i]).append('br');
+        formOverlay.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
+        formOverlay.append('label').text(choice[i]).append('br');
     }
-    form.append('button').attr('type', 'button').attr('id', 'overlay_submission').text('Get Plot!');
-    $('#overlay_submission').click(function () {overlay_list = [];
-                                                var checkbox = form.selectAll('input', '[type="checkbox"]');
+    // select gmean axis
+    selector_div.append('h5').text('select gmean');
+    var formGmean = selector_div.append('form').attr("id", "gmean_options").attr('action', '').append("fieldset");
+    formGmean.append('legend').text('select geometric mean:');
+    for (var i = 2; i < choice.length; i ++ ) {
+        //var label = form.append('label').attr('class', 'param_label');
+        formGmean.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
+        formGmean.append('label').text(choice[i]).append('br');
+    }
+    // add plot button
+    selector_div.append('button').attr('type', 'button').attr('id', 'get_customer_plot').text('Get Plot!');
+    $('#get_customer_plot').click(function () { gmean_list = [];
+                                                var checkbox = formGmean.selectAll('input', '[type="checkbox"]');
                                                 checkbox.each(function () {
                                                                            if (d3.select(this).property('checked')) {
+                                                                               gmean_list.push(d3.select(this).attr('index'));
+                                                                           }
+                                                                         });
+
+                                                overlay_list = [];
+                                                var checkbox = formOverlay.selectAll('input', '[type="checkbox"]');
+                                                checkbox.each(function () {
+                                                                           if (d3.select(this).property('checked') 
+                                                                            && gmean_list.indexOf(d3.select(this).attr('index')) == -1) {
                                                                                overlay_list.push(d3.select(this).attr('index'));
                                                                            }
                                                                          });
-                                                plot_generator(type);} );
+                                                console.log('>>>>>>>');
+                                                console.log('gmean_list');
+                                                console.log(gmean_list);
+                                                console.log('overlay_list');
+                                                console.log(overlay_list);
+                                                plot_generator();} );
 }
 /*
  * if x is originally a int or float, this function does nothing
@@ -241,13 +265,6 @@ function indexXString () {
                 index += 1;
             }
             xNameMap.push(xNM);
-            // update raw_data
-            // we don't need this. d3 can plot string values
-            /*
-            for (j in raw_data.data[t]) {
-                raw_data.data[t][j][0] = xNM.index[xNM.values.indexOf(raw_data.data[t][j][0])];
-            }
-            */
         } else {
             xNameMap.push({index: [], values: []});
         }
@@ -284,7 +301,7 @@ function findMostExpensiveAxis(rawData, params) {
  * generate the plot with user specified legend 
  * this function is called after user is in the 'customer plot' mode
  */
-function plot_generator(type) {
+function plot_generator() {
     // clear up
     d3.select('#chart').html('');
     var series = raw_data.data;
@@ -303,23 +320,42 @@ function plot_generator(type) {
                 filt_name.push(v);
             }
             filter.push(filt_name);
-            console.log("filt_name: " + raw_data.params[i+2]);
-            console.log("filt_temp " + filt_name);
         }
     }
+    // dealing with geo mean
+    gmean_data = [];
+    for (var i in series) {
+        gmean_data.push([]);
+        var gmeanPrep = data_transform(series[i], gmean_list, 'non-overlay');
+        for (var k in gmeanPrep) {
+            var groupedX = data_transform(gmeanPrep[k], [(0-2)+''], 'xy group');
+            seriesXY = [];
+            for (var l in groupedX) {
+                groupedX[l] = reduceToGmean(groupedX[l]);
+                var paramReduced = k.substring(2, k.length).split('  ');
+                for (var h in gmean_list) {
+                    paramReduced.splice(gmean_list[h], 0, '');
+                }
+                seriesXY.push([l, groupedX[l]].concat(paramReduced));
+                gmean_data[i].push([l,groupedX[l]].concat(paramReduced));
+            }
+            findAxisScale(seriesXY, xNameMap[i], i);
+        }
+
+    }
+    series = gmean_data;
+    // dealing with overlay axes
     // traverse all tasks
     range = [];
     for (var i = 0; i < series.length; i++) {
         var grouped_series = data_transform(series[i], overlay_list, 'non-overlay');
-        console.log(">>>>>");
-        console.log(overlay_list);
-        console.log(grouped_series);
         range.push({x: [], y: []});
         range[i]['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         range[i]['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         for (var k in grouped_series) {
             findAxisScale(grouped_series[k], xNameMap[i], i);
         }
+        d3.select('#chart').append('h3').text(raw_data.tasks[i]);
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i);
         }
@@ -399,8 +435,6 @@ function simple_plot(params, series, overlay_list, xNM, t) {
             lineVal = _.sortBy(lineVal, 'x');
             lineVal = _.map(lineVal, function(d) {return {x: xNM.values[d.x], y: d.y};});
         }
-        console.log('>>>>>');
-        console.log(lineVal);
         lineInfo.push({values: lineVal, key: k});
     }
     // plot
@@ -412,16 +446,16 @@ function simple_plot(params, series, overlay_list, xNM, t) {
     var x = null;
     if (xNM.values.length == 0) {
         x = d3.scale.linear()
-              .domain(range[t]['x'])
+              .domain([range[t]['x'][0] - 0.1*(range[t]['x'][1]-range[t]['x'][0]), range[t]['x'][1] + 0.1*(range[t]['x'][1]-range[t]['x'][0])])
               .range([0, width]);
     } else {
         x = d3.scale.ordinal()
               .domain(xNM.values)
-              .rangePoints([0, width]);
+              .rangePoints([0, width], 0.3);
     }
 
     var y = d3.scale.linear()
-        .domain(range[t]['y'])
+        .domain([range[t]['y'][0] - 0.2*(range[t]['y'][1]-range[t]['y'][0]), range[t]['y'][1] + 0.2*(range[t]['y'][1]-range[t]['y'][0])])
         .range([height, 0]);
 
     var xAxis = d3.svg.axis()
@@ -465,23 +499,22 @@ function simple_plot(params, series, overlay_list, xNM, t) {
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
-
+    // reassemble x and y axis name, to eliminate underscore
+    var xParam = _.reduce(params[0].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
+    var yParam = _.reduce(params[1].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
     svg.append('text').attr('class', 'x label').attr('text-anchor', 'middle')
        .attr('x', width/2).attr('y', height+30).style('font-size','14px')
-       .text(params[0]);
+       .text(xParam);
     svg.append('text').attr('class', 'y label').attr('text-anchor', 'middle')
        .attr('x', -height/2).attr('y', -50).attr('dy', '.75em')
        .attr('transform', 'rotate(-90)').style('font-size','14px')
-       .text(params[1]);
+       .text(yParam);
     //.on("click", reset);
     // .............
     // add line and dots
-    console.log('>>>> converted data');
-    console.log(series);
-    // TODO: possibly the problem of x(d['x']): why not simply d['x']
     var lineGen = d3.svg.line()
                     .x(function(d) {return x(d['x']);})
                     .y(function(d) {return y(d['y']);});
@@ -519,9 +552,14 @@ function simple_plot(params, series, overlay_list, xNM, t) {
                                            var height = legendSize + legendMargin;
                                            //var offset = height * color.domain().length / 2;
                                            var horz = width + 10;
-                                           var vert = i * height;
+                                           var vert = i * height + 20;
                                            return 'translate(' + horz + ', ' + vert + ')';
                                        });
+    var legendTitle = _.map(overlay_list, function(d) {return '<'+params[Number(d)+2]+'>';});
+    for (var i in legendTitle) {
+        legendTitle[i] = _.reduce(legendTitle[i].split('_'), function(memo, num){return memo == '' ? num : memo+' '+num;}, '');
+    }
+    svg.append('text').attr('x', width + 10).attr('y', 0).attr('text-anchor', 'left').style('font-size', '12px').style('font-weight', 'bold').text(String(legendTitle));
     legend.append('rect')
           .attr('width', legendSize).attr('height', legendSize)
           .style('fill', color).style('stroke', color);
@@ -539,10 +577,12 @@ function simple_plot(params, series, overlay_list, xNM, t) {
                     .style("font-size", "16px");
 
     for (var i = 2; i < series[0].length; i ++){
-        if ($.inArray(i-2+'', overlay_list) == -1) {
+        if ($.inArray(i-2+'', overlay_list) == -1 
+         && String(series[0][i]).length != 0) {
+            var paramRejoin = _.reduce(params[i].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
             cTitle.append('svg:tspan')
                   .style('fill', 'rgb(111,111,111)')
-                  .text(params[i] + ':');
+                  .text(paramRejoin + ':');
             cTitle.append('svg:tspan')
                   .style('font-weight', 'bold')
                   .text('  '+series[0][i]+'  ');
