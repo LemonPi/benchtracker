@@ -1,0 +1,2 @@
+vpr_revision	vpr_status	min_chan_width	critical_path_delay	pack_time	place_time	min_chan_width_route_time	crit_path_route_time	num_pre_packed_nets	num_pre_packed_blocks	num_post_packed_nets	num_clb	num_io	num_outputs	num_memories	num_mult	error	
+4614M	success	38	3.72508	0.241572	0.499341	0.854274	0.094289	765	895	415	43	99	130	1	0		

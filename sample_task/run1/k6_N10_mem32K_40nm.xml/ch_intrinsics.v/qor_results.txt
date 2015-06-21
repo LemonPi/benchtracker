@@ -1,0 +1,2 @@
+vpr_status	total_wirelength	total_runtime	num_clb	min_chan_width	crit_path_delay	max_vpr_mem	
+success	3728	1.71919	43	38	3.72508	-1	

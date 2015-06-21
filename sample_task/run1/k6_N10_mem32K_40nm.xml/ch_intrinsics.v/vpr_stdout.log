@@ -1,0 +1,297 @@
+filename
+
+VPR FPGA Placement and Routing.
+Version: Version 7.0.7
+Revision: 4614M
+Compiled: Jun  1 2015.
+University of Toronto
+vpr@eecg.utoronto.ca
+This is free open source code under MIT license.
+
+Architecture file: k6_N10_mem32K_40nm.xml
+Circuit name: ch_intrinsics.blif
+
+Building complex block graph.
+Warning 1: io[0].clock[0] unconnected pin in architecture.
+Swept away 0 nets with no fanout.
+Net is a constant generator: top^memory_controller_out~8.
+Warning 2: logical_block #678 with output top^memory_controller_out~8 has only 0 pin.
+Warning 3: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~9.
+Warning 4: logical_block #679 with output top^memory_controller_out~9 has only 0 pin.
+Warning 5: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~10.
+Warning 6: logical_block #680 with output top^memory_controller_out~10 has only 0 pin.
+Warning 7: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~11.
+Warning 8: logical_block #681 with output top^memory_controller_out~11 has only 0 pin.
+Warning 9: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~12.
+Warning 10: logical_block #682 with output top^memory_controller_out~12 has only 0 pin.
+Warning 11: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~13.
+Warning 12: logical_block #683 with output top^memory_controller_out~13 has only 0 pin.
+Warning 13: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~14.
+Warning 14: logical_block #684 with output top^memory_controller_out~14 has only 0 pin.
+Warning 15: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~15.
+Warning 16: logical_block #685 with output top^memory_controller_out~15 has only 0 pin.
+Warning 17: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~16.
+Warning 18: logical_block #686 with output top^memory_controller_out~16 has only 0 pin.
+Warning 19: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~17.
+Warning 20: logical_block #687 with output top^memory_controller_out~17 has only 0 pin.
+Warning 21: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~18.
+Warning 22: logical_block #688 with output top^memory_controller_out~18 has only 0 pin.
+Warning 23: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~19.
+Warning 24: logical_block #689 with output top^memory_controller_out~19 has only 0 pin.
+Warning 25: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~20.
+Warning 26: logical_block #690 with output top^memory_controller_out~20 has only 0 pin.
+Warning 27: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~21.
+Warning 28: logical_block #691 with output top^memory_controller_out~21 has only 0 pin.
+Warning 29: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~22.
+Warning 30: logical_block #692 with output top^memory_controller_out~22 has only 0 pin.
+Warning 31: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~23.
+Warning 32: logical_block #693 with output top^memory_controller_out~23 has only 0 pin.
+Warning 33: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~24.
+Warning 34: logical_block #694 with output top^memory_controller_out~24 has only 0 pin.
+Warning 35: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~25.
+Warning 36: logical_block #695 with output top^memory_controller_out~25 has only 0 pin.
+Warning 37: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~26.
+Warning 38: logical_block #696 with output top^memory_controller_out~26 has only 0 pin.
+Warning 39: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~27.
+Warning 40: logical_block #697 with output top^memory_controller_out~27 has only 0 pin.
+Warning 41: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~28.
+Warning 42: logical_block #698 with output top^memory_controller_out~28 has only 0 pin.
+Warning 43: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~29.
+Warning 44: logical_block #699 with output top^memory_controller_out~29 has only 0 pin.
+Warning 45: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~30.
+Warning 46: logical_block #700 with output top^memory_controller_out~30 has only 0 pin.
+Warning 47: Block contains output -- may be a constant generator.
+Net is a constant generator: top^memory_controller_out~31.
+Warning 48: logical_block #701 with output top^memory_controller_out~31 has only 0 pin.
+Warning 49: Block contains output -- may be a constant generator.
+Removed 33 LUT buffers.
+Sweeped away 33 nodes.
+BLIF circuit stats:
+	24 LUTs of size 0
+	0 LUTs of size 1
+	75 LUTs of size 2
+	5 LUTs of size 3
+	118 LUTs of size 4
+	114 LUTs of size 5
+	89 LUTs of size 6
+	99 of type input
+	130 of type output
+	233 of type latch
+	425 of type names
+	0 of type dual_port_ram
+	8 of type single_port_ram
+	0 of type multiply
+Timing analysis: ON
+Slack definition: R
+Circuit netlist file: ch_intrinsics.net
+Circuit placement file: ch_intrinsics.place
+Circuit routing file: ch_intrinsics.route
+Circuit SDC file: /home/zhongsh3/vtr/vtr_flow/sdc/ch_intrinsics.sdc
+Operation: RUN_FLOW
+
+Packer: DISABLED
+Placer: DISABLED
+Router: ENABLED
+RouterOpts.route_type: DETAILED
+RouterOpts.router_algorithm: TIMING_DRIVEN
+RouterOpts.base_cost_type: DELAY_NORMALIZED
+RouterOpts.fixed_channel_width: 50
+RouterOpts.trim_empty_chan: false
+RouterOpts.trim_obs_chan: false
+RouterOpts.acc_fac: 1.000000
+RouterOpts.bb_factor: 3
+RouterOpts.bend_cost: 0.000000
+RouterOpts.first_iter_pres_fac: 0.500000
+RouterOpts.initial_pres_fac: 0.500000
+RouterOpts.pres_fac_mult: 1.300000
+RouterOpts.max_router_iterations: 50
+RouterOpts.astar_fac: 1.200000
+RouterOpts.criticality_exp: 1.000000
+RouterOpts.max_criticality: 0.990000
+RouterOpts.routing_failure_predictor = SAFE
+
+RoutingArch.directionality: UNI_DIRECTIONAL
+RoutingArch.switch_block_type: WILTON
+RoutingArch.Fs: 3
+
+Begin parsing packed FPGA netlist file.
+Finished parsing packed FPGA netlist file.
+Netlist generated from file 'ch_intrinsics.net'.
+top^memory_controller_out~16 is a constant generator.
+top^memory_controller_out~15 is a constant generator.
+top^memory_controller_out~14 is a constant generator.
+top^memory_controller_out~13 is a constant generator.
+top^memory_controller_out~12 is a constant generator.
+top^memory_controller_out~11 is a constant generator.
+top^memory_controller_out~10 is a constant generator.
+top^memory_controller_out~9 is a constant generator.
+top^memory_controller_out~8 is a constant generator.
+top^memory_controller_out~25 is a constant generator.
+top^memory_controller_out~24 is a constant generator.
+top^memory_controller_out~23 is a constant generator.
+top^memory_controller_out~22 is a constant generator.
+top^memory_controller_out~21 is a constant generator.
+top^memory_controller_out~20 is a constant generator.
+top^memory_controller_out~19 is a constant generator.
+top^memory_controller_out~18 is a constant generator.
+top^memory_controller_out~17 is a constant generator.
+top^memory_controller_out~31 is a constant generator.
+top^memory_controller_out~29 is a constant generator.
+top^memory_controller_out~28 is a constant generator.
+top^memory_controller_out~27 is a constant generator.
+top^memory_controller_out~26 is a constant generator.
+top^memory_controller_out~30 is a constant generator.
+
+Netlist num_nets: 415
+Netlist num_blocks: 273
+Netlist <EMPTY> blocks: 0.
+Netlist clb blocks: 43.
+Netlist mult_36 blocks: 0.
+Netlist memory blocks: 1.
+Netlist inputs pins: 99
+Netlist output pins: 130
+
+Auto-sizing FPGA at x = 17 y = 17
+Auto-sizing FPGA at x = 9 y = 9
+Auto-sizing FPGA at x = 5 y = 5
+Auto-sizing FPGA at x = 7 y = 7
+Auto-sizing FPGA at x = 8 y = 8
+Auto-sizing FPGA at x = 7 y = 7
+FPGA auto-sized to x = 8 y = 8
+The circuit will be mapped into a 8 x 8 array of clbs.
+
+Resource usage...
+	Netlist      0	blocks of type: <EMPTY>
+	Architecture 6	blocks of type: <EMPTY>
+	Netlist      229	blocks of type: io
+	Architecture 256	blocks of type: io
+	Netlist      43	blocks of type: clb
+	Architecture 48	blocks of type: clb
+	Netlist      0	blocks of type: mult_36
+	Architecture 2	blocks of type: mult_36
+	Netlist      1	blocks of type: memory
+	Architecture 1	blocks of type: memory
+
+Iteratively removing timing edges to break combinational cycles in timing graph.
+Removed 0 combinational cycles from timing graph after 0 iteration(s)
+
+SDC file '/home/zhongsh3/vtr/vtr_flow/sdc/ch_intrinsics.sdc' blank or not found.
+
+Defaulting to: constrain all 99 inputs and 130 outputs on the netlist clock.
+Optimize this clock to run as fast as possible.
+Build rr_graph took 0.017964 seconds.
+Confirming router algorithm: TIMING_DRIVEN.
+Wire length after first iteration 2817, total available wire length 7200, ratio 0.39125
+--------- ---------- ----------- ---------------------
+Iteration       Time   Crit Path     Overused RR Nodes
+--------- ---------- ----------- ---------------------
+        1   0.01 sec  3.58070 ns   5.76e+02 (7.6820 %)
+        2   0.01 sec  3.58070 ns   3.19e+02 (4.2545 %)
+        3   0.01 sec  3.58291 ns   2.43e+02 (3.2409 %)
+        4   0.01 sec  3.58180 ns   1.84e+02 (2.4540 %)
+        5   0.00 sec  3.58180 ns   1.14e+02 (1.5204 %)
+        6   0.00 sec  3.65886 ns   9.60e+01 (1.2803 %)
+        7   0.00 sec  3.72398 ns   5.80e+01 (0.7735 %)
+        8   0.00 sec  3.65886 ns   4.20e+01 (0.5601 %)
+        9   0.00 sec  3.72508 ns   2.40e+01 (0.3201 %)
+       10   0.00 sec  3.72508 ns   1.10e+01 (0.1467 %)
+       11   0.00 sec  3.72508 ns   8.00e+00 (0.1067 %)
+       12   0.00 sec  3.72508 ns   7.00e+00 (0.0934 %)
+       13   0.00 sec  3.72508 ns   5.00e+00 (0.0667 %)
+       14   0.00 sec  3.72508 ns   4.00e+00 (0.0533 %)
+       15   0.00 sec  3.72508 ns   4.00e+00 (0.0533 %)
+       16   0.00 sec  3.72508 ns   2.00e+00 (0.0267 %)
+       17   0.00 sec  3.72508 ns   2.00e+00 (0.0267 %)
+       18   0.00 sec  3.72508 ns   0.00e+00 (0.0000 %)
+Critical path: 3.72508 ns
+Successfully routed after 18 routing iterations.
+Completed net delay value cross check successfully.
+
+Checking to ensure routing is legal...
+Completed routing consistency check successfully.
+
+Serial number (magic cookie) for the routing is: -272994645
+Circuit successfully routed with a channel width factor of 50.
+
+Average number of bends per net: 1.17633  Maximum # of bends: 10
+
+Number of routed nets (nonglobal): 414
+Wire length results (in units of 1 clb segments)...
+	Total wirelength: 3199, average net length: 7.72705
+	Maximum net length: 47
+
+Wire length results in terms of physical segments...
+	Total wiring segments used: 1017, average wire segments per net: 2.45652
+	Maximum segments used by a net: 13
+	Total local nets with reserved CLB opins: 0
+
+X - Directed channels: j max occ ave occ capacity
+                      -- ------- ------- --------
+                       0      38 32.0000       50
+                       1      19 18.0000       50
+                       2      27 20.7500       50
+                       3      23 19.8750       50
+                       4      24 22.5000       50
+                       5      24 18.1250       50
+                       6      23 18.2500       50
+                       7      22 19.1250       50
+                       8      37 27.2500       50
+Y - Directed channels: i max occ ave occ capacity
+                      -- ------- ------- --------
+                       0      41 29.6250       50
+                       1      22 18.0000       50
+                       2      28 22.3750       50
+                       3      32 28.0000       50
+                       4      28 25.3750       50
+                       5      13 10.7500       50
+                       6      20 15.3750       50
+                       7      31 24.1250       50
+                       8      43 30.3750       50
+
+Total tracks in x-direction: 450, in y-direction: 450
+
+Logic area (in minimum width transistor areas, excludes I/Os and empty grid tiles)...
+	Total logic block area (Warning, need to add pitch of routing to blocks with height > 3): 3.92691e+06
+	Total used logic block area: 2.86544e+06
+
+Routing area (in minimum width transistor areas)...
+	Total routing area: 278917., per logic tile: 4358.08
+
+Segment usage by type (index): type utilization
+                               ---- -----------
+                                  0       0.411
+
+Segment usage by length: length utilization
+                         ------ -----------
+                              4       0.411
+
+Nets on critical path: 4 normal, 0 global.
+Total logic delay: 2.314e-09 (s), total net delay: 1.41108e-09 (s)
+Final critical path: 3.72508 ns
+Least slack in design: -3.72508 ns
+
+Routing took 0.094289 seconds.
+Timing analysis took 0.015248 seconds.
+The entire flow of VPR took 0.2252 seconds.
