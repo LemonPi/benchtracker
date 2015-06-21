@@ -5,7 +5,15 @@ Your project can enter and exit at any point!
 
 
 # Definitions
-**Task**: A collection of benchmarks that are run together. Is defined by a [`config.txt` file](#config_file) inside `<task_dir>/config/`.
+**Task**: A collection of benchmarks that are run together. Is defined by a [`config.txt` file](#config_file) inside `<task_dir>/config/`. Structure should look like:
+
+    task_name
+        config
+            config.txt
+        run1
+        run2
+        run3
+        ...
 
 **Run**: One sweep through the benchmarks defined in a task. 
 
@@ -19,7 +27,7 @@ Each tool has additional options found by running them with `-h`. Listed in orde
 
 (TODO) run_task.py: 
  - preconditions: 
-    - a task-run directory set up like sample_task and shown below.
+    - task-run structure
  - inputs: 
     - task directory (relative or absolute path to it)
  - actions:
@@ -92,7 +100,12 @@ The format of each line should be `<parameter_name>=<parameter_value>`.
 Lines beginning in '#' are treated as comments.
 
 Parameters include:
- - 
+ - user_script:
+ - script_params
+ - key_param:
+ - key_param_dir:
+ - key_param_add:
+ - parse_file:
  
 <a name="parse_file"> </a>
 # Parse File
