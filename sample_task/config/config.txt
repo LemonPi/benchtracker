@@ -1,0 +1,29 @@
+##############################################
+# Configuration file for running experiments
+##############################################
+
+primary_key=arch
+
+# Path to directory of architectures to use
+primary_key_dir=arch/timing
+
+# Add architectures to list to sweep
+primary_key_add=k6_N10_mem32K_40nm.xml
+
+
+primary_key=circuit
+
+# Path to directory of circuits to use
+primary_key_dir=benchmarks/verilog
+
+# Add circuits to list to sweep
+primary_key_add=ch_intrinsics.v
+primary_key_add=diffeq1.v
+
+
+# Parse info and how to parse
+parse_file=qor_memory.txt
+
+
+user_script=~/vtr/vtr_flow/scripts/run_vtr_task.pl
+script_params=-track_memory_usage 
