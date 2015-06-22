@@ -22,6 +22,24 @@ Your project can enter and exit at any point!
   architecture and circuit define a [VTR benchmark](https://code.google.com/p/vtr-verilog-to-routing/), so
   each benchmark is one particular combination of an architecture and a circuit.
 
+**Metrics**: A set of values that are measured as an outcome of the experiment.
+  For example, minimum channel width, critical path delay obtained by the output of [VTR benchmark](https://code.google.com/p/vtr-verilog-to-routing/) are the metrics. 
+
+**Axis**: is mainly referred to by the plotter. Basically, the data input to the plotter is stored in a 2D table,
+  whose columns are filled in by values of either a parameter or a metric. This table can be transformed into a 
+  high dimensional array, with each dimension corresponding to a parameter or a metric. So an axis is a synonym 
+  for dimension. In other words, for the plotter, an axis can be a filter, an x or a y.
+
+**Raw**: data is called "raw" if it is not "compressed" or "reduced". Specifically, for the plotter, data is regarded
+  as raw if it is not reduced by "gmean" (see the definition below).
+
+**Gmean**: "gmean" is the abbreviations for "geometric mean". For example, in the VTR experiment, if the metric in 
+  interest (i.e.: y axis) is minimum channel width, then the "gmean" operation over "circuits" will merge the
+  circuit axis by calculating the geometric mean of all circuits' minimum channel width.
+
+**Overlay**: in the plotter, if you choose an overlay axis "P", then all lines in the same plot will have the same parameter 
+  values except P value. In other words, the legend of the plot in this case will be "P".
+
 # Tools
 Each tool has additional options found by running them with `-h`. Listed in order that they should be run:
 
@@ -91,8 +109,19 @@ server_db.py:
       - retieve data `/data` (t,x,y,[fp,fm,fa]...)
     - web viewer and plotter for GUI into database under `/view`
 
-
-(Hanson can describe his offline plotter)
+plotter-offline.py:
+  - preconditions:
+    - in the same dir with interface_db.py
+  - inputs:
+    - data table with x and y axis specified, overlay axes, gmean axes
+  - actions:
+    - calculates the geometric mean of y axis over the gmean axes
+    - generates plots with the input x, y axis. The legend is given by the input overlay axes.
+    - user can choose whether to display the plot of the gmean data or the raw data.
+    - the plot will ignore the data points with invalid value, and do interpolation (when calculating gmean,
+      the invalid value will also be picked out)
+  - outputs:
+    - the resulting plot
 
 <a name="config_file"> </a>
 # Task Configuration File
