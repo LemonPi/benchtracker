@@ -99,6 +99,12 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                 result_params_val.extend(line.split('\t'))
                 if result_params_val[-1] == '\n':
                     result_params_val.pop()
+                # something must be wrong here
+                if len(result_params_val) > len(result_params):
+                    print("There are {} values for only {} parameters in run {}".format(len(result_params_val), len(result_params), run_number))
+                    # skip this run
+                    return
+
                 # for when the last column value is the empty string
                 while len(result_params_val) < len(result_params):
                     result_params_val.append('')
@@ -113,6 +119,7 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                 param_placeholders)
             cursor = db.cursor()
             cursor.executemany(insert_rows_command, rows_to_add)
+
 
 
     walk_runs(params, add_run_to_db, check_runs_match_table)
