@@ -23,7 +23,9 @@ Your project can enter and exit at any point!
   each benchmark is one particular combination of an architecture and a circuit.
 
 # Tools
-Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow, see command line help for detailed usage of each tool.  
+Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow (pictured below), see command line help for detailed usage of each tool.  
+
+![toolchain-flow](flow.png)
 
 Listed in order that they should be run:
 
