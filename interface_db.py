@@ -9,6 +9,7 @@ from subprocess import call
 import argparse
 import textwrap
 import csv
+import StringIO
 
 def list_tasks(dbname = "results.db"):
     """Return a list of all task names in a database"""
@@ -97,25 +98,41 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
         
     return cols_to_select, data
 
-def export_data_csv(selected_cols, data, tasks, dir = "benchtracker_data"):
+def export_data_csv(selected_cols, data):
     """
-    Exports retrieved data to a directory containing csv files.
+    Exports retrieved data as in-memory csv files.
 
-    Each task will be a separate csv file, with their full task table name (with '/' replaced with '.').
+    Each task will be a separate csv file, with the naming left to the caller.
     The first row will be the header for the selected columns, the rest will be values.
+    """
+    for task_data in data:
+        csvf = StringIO.StringIO()
+        writer = csv.writer(csvf)
+        # header information
+        writer.writerow(selected_cols)
+
+        for row in task_data:
+            writer.writerow(tuple(row))
+        yield csvf
+
+
+def export_data_csv_todisk(selected_cols, data, tasks, dir = "benchtracker_data"):
+    """
+    Exports retrieved data as csv files on export_data_csv_todisk
+
+    Each task is a separate file with their full task name, '/' being replaced by '.'
     """
     if not os.path.exists(dir):
         makedirs(dir)
-    for t in range(len(tasks)):
-        with open("".join([dir, '/', tasks[t].replace('/','.'), '.csv']), 'w') as csvf:
-            writer = csv.writer(csvf)
-            # header information
-            writer.writerow(selected_cols)
-
-            task_data = data[t]
-            # writerows won't work on sqlite3 rows
-            for row in task_data:
-                writer.writerow(tuple(row))
+    t = 0
+    for csvf in export_data_csv(selected_cols, data):
+        with open("".join([dir, '/', tasks[t].replace('/','.'), '.csv']), 'w') as f:
+            csvf.seek(0)
+            buf = csvf.read(1048576) # 1 MB
+            while buf:
+                f.write(buf)
+                buf = csvf.read(1048576)
+            t += 1
 
 
 
