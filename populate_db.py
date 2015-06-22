@@ -101,7 +101,8 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                     result_params_val.pop()
                 # something must be wrong here
                 if len(result_params_val) > len(result_params):
-                    print("There are {} values for only {} parameters in run {}".format(len(result_params_val), len(result_params), run_number))
+                    print("There are {} values for only {} parameters in run {}; \
+                        skipping run".format(len(result_params_val), len(result_params), run_number))
                     # skip this run
                     return
 
