@@ -1,0 +1,222 @@
+filename
+
+VPR FPGA Placement and Routing.
+Version: Version 7.0.7
+Revision: 4614M
+Compiled: Jun  1 2015.
+University of Toronto
+vpr@eecg.utoronto.ca
+This is free open source code under MIT license.
+
+Architecture file: k6_N10_mem32K_40nm.xml
+Circuit name: diffeq1.blif
+
+Building complex block graph.
+Warning 1: io[0].clock[0] unconnected pin in architecture.
+Swept away 196 nets with no fanout.
+Net is a constant generator: vcc.
+Warning 2: logical_block #456 with output vcc has only 0 pin.
+Warning 3: Block contains output -- may be a constant generator.
+Removed 96 LUT buffers.
+Sweeped away 96 nodes.
+BLIF circuit stats:
+	1 LUTs of size 0
+	0 LUTs of size 1
+	64 LUTs of size 2
+	131 LUTs of size 3
+	40 LUTs of size 4
+	59 LUTs of size 5
+	190 LUTs of size 6
+	162 of type input
+	96 of type output
+	193 of type latch
+	485 of type names
+	0 of type dual_port_ram
+	0 of type single_port_ram
+	5 of type multiply
+Timing analysis: ON
+Slack definition: R
+Circuit netlist file: diffeq1.net
+Circuit placement file: diffeq1.place
+Circuit routing file: diffeq1.route
+Circuit SDC file: /home/zhongsh3/vtr/vtr_flow/sdc/diffeq1.sdc
+Operation: RUN_FLOW
+
+Packer: DISABLED
+Placer: DISABLED
+Router: ENABLED
+RouterOpts.route_type: DETAILED
+RouterOpts.router_algorithm: TIMING_DRIVEN
+RouterOpts.base_cost_type: DELAY_NORMALIZED
+RouterOpts.fixed_channel_width: 68
+RouterOpts.trim_empty_chan: false
+RouterOpts.trim_obs_chan: false
+RouterOpts.acc_fac: 1.000000
+RouterOpts.bb_factor: 3
+RouterOpts.bend_cost: 0.000000
+RouterOpts.first_iter_pres_fac: 0.500000
+RouterOpts.initial_pres_fac: 0.500000
+RouterOpts.pres_fac_mult: 1.300000
+RouterOpts.max_router_iterations: 50
+RouterOpts.astar_fac: 1.200000
+RouterOpts.criticality_exp: 1.000000
+RouterOpts.max_criticality: 0.990000
+RouterOpts.routing_failure_predictor = SAFE
+
+RoutingArch.directionality: UNI_DIRECTIONAL
+RoutingArch.switch_block_type: WILTON
+RoutingArch.Fs: 3
+
+Begin parsing packed FPGA netlist file.
+Finished parsing packed FPGA netlist file.
+Netlist generated from file 'diffeq1.net'.
+vcc is a constant generator.
+
+Netlist num_nets: 718
+Netlist num_blocks: 313
+Netlist <EMPTY> blocks: 0.
+Netlist clb blocks: 50.
+Netlist mult_36 blocks: 5.
+Netlist memory blocks: 0.
+Netlist inputs pins: 162
+Netlist output pins: 96
+
+Auto-sizing FPGA at x = 18 y = 18
+Auto-sizing FPGA at x = 9 y = 9
+Auto-sizing FPGA at x = 13 y = 13
+Auto-sizing FPGA at x = 15 y = 15
+Auto-sizing FPGA at x = 14 y = 14
+Auto-sizing FPGA at x = 13 y = 13
+FPGA auto-sized to x = 14 y = 14
+The circuit will be mapped into a 14 x 14 array of clbs.
+
+Resource usage...
+	Netlist      0	blocks of type: <EMPTY>
+	Architecture 12	blocks of type: <EMPTY>
+	Netlist      258	blocks of type: io
+	Architecture 448	blocks of type: io
+	Netlist      50	blocks of type: clb
+	Architecture 140	blocks of type: clb
+	Netlist      5	blocks of type: mult_36
+	Architecture 6	blocks of type: mult_36
+	Netlist      0	blocks of type: memory
+	Architecture 4	blocks of type: memory
+
+Iteratively removing timing edges to break combinational cycles in timing graph.
+Removed 0 combinational cycles from timing graph after 0 iteration(s)
+
+SDC file '/home/zhongsh3/vtr/vtr_flow/sdc/diffeq1.sdc' blank or not found.
+
+Defaulting to: constrain all 162 inputs and 96 outputs on the netlist clock.
+Optimize this clock to run as fast as possible.
+Build rr_graph took 0.072899 seconds.
+Confirming router algorithm: TIMING_DRIVEN.
+Wire length after first iteration 9090, total available wire length 28560, ratio 0.318277
+--------- ---------- ----------- ---------------------
+Iteration       Time   Crit Path     Overused RR Nodes
+--------- ---------- ----------- ---------------------
+        1   0.05 sec 21.51113 ns   1.38e+03 (6.2876 %)
+        2   0.04 sec 21.51003 ns   5.24e+02 (2.3892 %)
+        3   0.04 sec 21.51446 ns   4.41e+02 (2.0108 %)
+        4   0.04 sec 21.51556 ns   3.65e+02 (1.6642 %)
+        5   0.04 sec 21.51556 ns   2.77e+02 (1.2630 %)
+        6   0.03 sec 21.51667 ns   2.43e+02 (1.1080 %)
+        7   0.03 sec 21.51888 ns   1.78e+02 (0.8116 %)
+        8   0.03 sec 21.51999 ns   1.25e+02 (0.5699 %)
+        9   0.03 sec 21.51999 ns   1.13e+02 (0.5152 %)
+       10   0.03 sec 21.51999 ns   9.30e+01 (0.4240 %)
+       11   0.02 sec 21.51999 ns   6.90e+01 (0.3146 %)
+       12   0.03 sec 21.51896 ns   5.40e+01 (0.2462 %)
+       13   0.02 sec 21.51896 ns   4.30e+01 (0.1961 %)
+       14   0.02 sec 21.52006 ns   3.70e+01 (0.1687 %)
+       15   0.01 sec 21.52006 ns   2.70e+01 (0.1231 %)
+       16   0.01 sec 21.52006 ns   1.70e+01 (0.0775 %)
+       17   0.01 sec 21.48388 ns   1.50e+01 (0.0684 %)
+       18   0.01 sec 21.48388 ns   4.00e+00 (0.0182 %)
+       19   0.01 sec 21.48388 ns   4.00e+00 (0.0182 %)
+       20   0.00 sec 21.48388 ns   1.00e+00 (0.0046 %)
+       21   0.00 sec 21.48388 ns   1.00e+00 (0.0046 %)
+       22   0.00 sec 21.48388 ns   1.00e+00 (0.0046 %)
+       23   0.00 sec 21.48388 ns   0.00e+00 (0.0000 %)
+Critical path: 21.4839 ns
+Successfully routed after 23 routing iterations.
+Completed net delay value cross check successfully.
+
+Checking to ensure routing is legal...
+Completed routing consistency check successfully.
+
+Serial number (magic cookie) for the routing is: -1043561671
+Circuit successfully routed with a channel width factor of 68.
+
+Average number of bends per net: 2.12989  Maximum # of bends: 23
+
+Number of routed nets (nonglobal): 716
+Wire length results (in units of 1 clb segments)...
+	Total wirelength: 9997, average net length: 13.9623
+	Maximum net length: 106
+
+Wire length results in terms of physical segments...
+	Total wiring segments used: 2679, average wire segments per net: 3.74162
+	Maximum segments used by a net: 27
+	Total local nets with reserved CLB opins: 0
+
+X - Directed channels: j max occ ave occ capacity
+                      -- ------- ------- --------
+                       0      45 20.4286       68
+                       1      12  4.6429       68
+                       2      12  6.3571       68
+                       3      22 10.0714       68
+                       4      48 27.1429       68
+                       5      46 31.8571       68
+                       6      44 31.7857       68
+                       7      53 35.6429       68
+                       8      55 43.7143       68
+                       9      51 36.5714       68
+                      10      36 26.7143       68
+                      11      32 21.8571       68
+                      12      29 17.6429       68
+                      13      15  5.8571       68
+                      14      34 20.0000       68
+Y - Directed channels: i max occ ave occ capacity
+                      -- ------- ------- --------
+                       0      35 19.9286       68
+                       1       6  2.5000       68
+                       2      17 10.1429       68
+                       3      31 17.1429       68
+                       4      47 28.5000       68
+                       5      60 41.7857       68
+                       6      62 43.6429       68
+                       7      51 31.0000       68
+                       8      49 27.2857       68
+                       9      33 18.7857       68
+                      10      31 17.3571       68
+                      11      43 19.2857       68
+                      12      46 22.7143       68
+                      13      55 30.7143       68
+                      14      68 43.0000       68
+
+Total tracks in x-direction: 1020, in y-direction: 1020
+
+Logic area (in minimum width transistor areas, excludes I/Os and empty grid tiles)...
+	Total logic block area (Warning, need to add pitch of routing to blocks with height > 3): 1.21132e+07
+	Total used logic block area: 4.6747e+06
+
+Routing area (in minimum width transistor areas)...
+	Total routing area: 1.02619e+06, per logic tile: 5235.69
+
+Segment usage by type (index): type utilization
+                               ---- -----------
+                                  0       0.309
+
+Segment usage by length: length utilization
+                         ------ -----------
+                              4       0.309
+
+Nets on critical path: 14 normal, 0 global.
+Total logic delay: 1.64794e-08 (s), total net delay: 5.04688e-09 (s)
+Final critical path: 21.4839 ns
+Least slack in design: -21.4839 ns
+
+Routing took 0.627074 seconds.
+Timing analysis took 0.026595 seconds.
+The entire flow of VPR took 0.763625 seconds.

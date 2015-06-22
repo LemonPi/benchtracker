@@ -1,0 +1,7 @@
+vpr_status;output.txt;vpr_status=(.*)
+total_wirelength;vpr.out;Total wirelength:\s*(\d+)
+total_runtime;vpr.out;The entire flow of VPR took (.*) seconds
+num_clb;vpr.out;Netlist clb blocks:\s*(\d+)
+min_chan_width;vpr.out;Best routing used a channel width factor of (\d+)
+crit_path_delay;vpr.crit_path.out;Final critical path: (.*) ns
+max_vpr_mem;vpr.out;Maximum resident set size \(kbytes\): (\d+)

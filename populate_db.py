@@ -2,7 +2,6 @@
 
 from __future__ import print_function, division
 import sys
-import re
 from subprocess import call
 import os.path
 import shlex
@@ -11,6 +10,9 @@ import textwrap
 import sqlite3
 import socket   # for hostname
 import getpass  # for username
+from util import (walk_runs, get_trailing_num, get_result_file, 
+    get_task_table_name, immediate_subdir, natural_sort,
+    is_int, is_float, convert_strictest)
 
 nullval = '-1'
 type_map = {int: "INT", float: "REAL", str: "TEXT"}
@@ -21,14 +23,16 @@ def main():
     parse_args(params)
     if (params.clean):
         drop_table(params)
-    verify_paths(params)
 
     # operate on database
     db = sqlite3.connect(params.database)
     db.row_factory = sqlite3.Row
 
-    initialize_tracked_columns(params, db)
-    update_db(params, db)
+    while params.task_dir:
+        verify_paths(params)
+        initialize_tracked_columns(params, db)
+        update_db(params, db)
+        load_next_task(params)
 
     db.close()
 
@@ -202,8 +206,13 @@ def parse_args(ns=None):
             usage="%(prog)s <task_dir> [OPTIONS]")
 
     # arguments should either end with _dir or _file for use by other functions
-    parser.add_argument("task_dir", 
-            help="directory (relative or absolute) holding runs")
+    parser.add_argument("task_list", 
+            nargs='+',
+            default=[],
+            help="directories (relative or absolute) holding runs")
+    parser.add_argument("--root_directory",
+            default="",
+            help="where the task paths are relative to (only set if task paths are relative)")
     parser.add_argument("-f", "--result_file", 
             default="parse_results.txt",
             help="result file to look for inside each run; default: %(default)s")
@@ -213,7 +222,7 @@ def parse_args(ns=None):
     parser.add_argument("-s", "--parse_script",
             default="echo parsed result file not found {run_number} for {task_name}",
             help="bash command string to run if parsed file not found;\
-                use \{run_number\} and \{task_name\} to retrieve run information;\
+                use {run_number} and {task_name} to retrieve run information;\
                 default: %(default)s")
     parser.add_argument("-d", "--database",
             default="results.db",
@@ -227,6 +236,36 @@ def parse_args(ns=None):
             default=[],
             help="a list of key parameters that define a unique benchmark; default: %(default)s")
     params = parser.parse_args(namespace=ns)
+
+    # if a task list is given (where each line is the path to a task)
+    if params.root_directory:
+        if params.root_directory[-1] != '/':
+            params.root_directory += '/'
+        params.task_list = [params.root_directory + task for task in params.task_list]
+
+    if os.path.isfile(params.task_list[0]):
+        print("given task list")
+        task_list = []
+        with open(params.task_list[0], 'r') as tl:
+            for line in tl:
+                task_list.append(params.root_directory + line.rstrip())
+            params.task_list = task_list
+
+    # print(params.task_list)
+
+    # load first task
+    load_next_task(params)
+    return params
+
+def load_next_task(params):
+    if not params.task_list:
+        setattr(params, 'task_dir', None)
+        return
+
+    active_task = params.task_list.pop()
+    print("active task:", active_task)
+
+    setattr(params, 'task_dir', active_task)
     # name of task
     setattr(params, 'task_name', params.task_dir.split('/')[-1])
     # path to task
@@ -235,21 +274,6 @@ def parse_args(ns=None):
     setattr(params, 'task_table_name', get_task_table_name(params))
     return params
 
-
-# working on the task directory
-def sort_runs(runs):
-    natural_sort(runs)
-
-def walk_runs(params, operation, select=sort_runs):
-    """walk the selected run# directories and apply operation on each"""
-    runs = [run for run in immediate_subdir(params.task_dir) if run.startswith(params.run_prefix)]
-    # select how to and which runs to use for a certain range
-    select(runs)
-    if not runs:
-        print("no {}s in {}".format(params.run_prefix, params.task_dir))
-        sys.exit(1)
-    for run in runs:
-        operation(params, run)
 
 
 # walk operations; all take params and run as arguments
@@ -266,58 +290,12 @@ def check_result_exists(params, run):
     else:
         print(run, " OK")
 
-
-    
-# utilities
-def natural_sort(l):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
-    l.sort(key=alphanum_key)
-
-def get_result_file(params, run):
-    return os.path.join(params.task_dir, run, params.result_file)
-
-def get_task_table_name(params):
-    return '[' + "|".join([params.task_name, socket.gethostname(), getpass.getuser(), params.task_path]) + ']'
-
-def immediate_subdir(root):
-    return [name for name in os.listdir(root) if os.path.isdir(os.path.join(root, name))]
-
-def get_trailing_num(s):
-    match = re.search(r'\d+$', s)
-    return int(match.group()) if match else None
-
-def is_type_of(s, convert):
-    try:
-        convert(s)
-        return True
-    except ValueError:
-        return False
-
-def is_int(s):
-    return is_type_of(s, int)
-
-def is_float(s):
-    return is_type_of(s, float)
-
-# try converting to numerical types using the strictest converters first
-def convert_strictest(s):
-    try:
-        return int(s)
-    except ValueError:
-        try:
-            return float(s)
-        except ValueError:
-            return s
-
-
 def add_column_to_table(params, db, column_name, sample_val):
     cursor = db.cursor()
     col_type = type_map.get(type(convert_strictest(sample_val)), "TEXT")
     cursor.execute("ALTER TABLE {table} ADD COLUMN {col} {type}".format(
         table=params.task_table_name, col=column_name, type=col_type))
     params.tracked_columns.add(column_name)
-
 
 
 if __name__ == "__main__":

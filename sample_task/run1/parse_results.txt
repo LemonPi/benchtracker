@@ -1,0 +1,3 @@
+arch	circuit	vpr_status	total_wirelength	total_runtime	num_clb	min_chan_width	crit_path_delay	max_vpr_mem	
+k6_N10_mem32K_40nm.xml	ch_intrinsics.v	success	3728	1.71919	43	38	3.72508	-1	
+k6_N10_mem32K_40nm.xml	diffeq1.v	success	11234	10.9009	50	52	21.4839	-1	
