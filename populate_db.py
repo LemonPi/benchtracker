@@ -156,7 +156,7 @@ def create_table(params, db, task_table_name):
         primary_keys = "PRIMARY KEY({},".format(params.run_prefix) # run always considered primary key
         for primary_key in params.key_params:
             if primary_key not in result_params:
-                print("{} does not exist in result file".format(primary_key))
+                print("{} does not exist in result file of run 1".format(primary_key))
                 sys.exit(3)
             primary_keys += primary_key
             primary_keys += ','
@@ -182,6 +182,8 @@ def initialize_tracked_columns(params, db):
     for info in column_info:
         column_names.add(info[1])
     setattr(params, 'tracked_columns', column_names)
+    print('tracked_columns: ', end='')
+    print(params.tracked_columns)
 
 
 
