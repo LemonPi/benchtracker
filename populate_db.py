@@ -98,6 +98,9 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                 result_params_val.extend(line.split('\t'))
                 if result_params_val[-1] == '\n':
                     result_params_val.pop()
+                # for when the last column value is the empty string
+                while len(result_params_val) < len(result_params):
+                    result_params_val.append('')
 
                 rows_to_add.append(tuple(convert_strictest(param) if param != nullval else None for param in result_params_val))
 
@@ -182,7 +185,7 @@ def initialize_tracked_columns(params, db):
     for info in column_info:
         column_names.add(info[1])
     setattr(params, 'tracked_columns', column_names)
-    print('tracked_columns: ', end='')
+    print('tracked params: ', end='')
     print(params.tracked_columns)
 
 
