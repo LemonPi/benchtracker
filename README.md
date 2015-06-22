@@ -17,13 +17,18 @@ Your project can enter and exit at any point!
 
 **Run**: One sweep through the benchmarks defined in a task. 
 
-**Key parameters**: A set of parameters that in combination define a particular benchmark. 
-  They are usually the "input" parameters and not measured "output" parameters. For example,
+**Parameter**: A value that either affects or measures the performance of a benchmark.
+
+**Key parameters**: The set of parameters that in combination define a particular benchmark. 
+  They are usually input parameters. For example,
   architecture and circuit define a [VTR benchmark](https://code.google.com/p/vtr-verilog-to-routing/), so
   each benchmark is one particular combination of an architecture and a circuit.
 
-**Metrics**: A set of values that are measured as an outcome of the experiment.
-  For example, minimum channel width, critical path delay obtained by the output of [VTR benchmark](https://code.google.com/p/vtr-verilog-to-routing/) are the metrics. 
+**Input parameters**: The set of parameters that affect the performance of a benchmark.
+    They are usually the key parameters.
+
+**Output parameters**: The set of parameters that measure the outcome of a benchmark run.
+  For example minimum channel width and critical path delay are output parameters of a [VTR benchmark](https://code.google.com/p/vtr-verilog-to-routing/). 
 
 **Axis**: is mainly referred to by the plotter. Basically, the data input to the plotter is stored in a 2D table,
   whose columns are filled in by values of either a parameter or a metric. This table can be transformed into a 
