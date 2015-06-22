@@ -23,7 +23,9 @@ Your project can enter and exit at any point!
   each benchmark is one particular combination of an architecture and a circuit.
 
 # Tools
-Each tool has additional options found by running them with `-h`. Listed in order that they should be run:
+Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow, see command line help for detailed usage of each tool.  
+
+Listed in order that they should be run:
 
 (TODO) run_task.py: 
  - preconditions: 
@@ -125,3 +127,5 @@ On each line is the value of each parameter for that benchmark.
 
 <a name="public_hosting"> </a>
 # Public Hosting Instructions
+At the bottom of `server_db.py`, change the call of the run() method to:
+`app.run(host='0.0.0.0')` for the server to be visible via your machine's public IP.
