@@ -111,7 +111,8 @@ server_db.py:
       - list tasks `/`, `/tasks` ()
       - describe parameter `/param` (t,p,m)
       - retieve data `/data` (t,x,y,[fp,fm,fa]...)
-    - web viewer and plotter for GUI into database under `/view`
+    - web viewer and plotter for GUI into database under `/view`, the online plotter is quite similar with the offline
+      one, in terms of functionality (see plotter-offline.py).
 
 plotter-offline.py:
   - preconditions:
