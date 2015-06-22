@@ -94,7 +94,7 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
         print(select_command)
         cursor = db.cursor()
         cursor.execute(select_command, sql_val_args)
-        data.append(cursor.fetchall());
+        data.append(tuple(tuple(row) for row in cursor.fetchall()));
         
     return cols_to_select, data
 
@@ -112,7 +112,7 @@ def export_data_csv(selected_cols, data):
         writer.writerow(selected_cols)
 
         for row in task_data:
-            writer.writerow(tuple(row))
+            writer.writerow(row)
         yield csvf
 
 
