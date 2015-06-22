@@ -23,7 +23,7 @@ var gmean_list = [];
 var raw_data = null;
 var gmean_data = null;
 var range = [];
-var plotSize = {'width': 650, 'height': 500};
+var plotSize = {'width': 670, 'height': 500};
 var plotMargin = {'left': 100, 'right': 140, 'top': 70, 'bottom': 70};
 // a list of svg elements in d3 type: used for future plot manipulation
 var chartList = [];
@@ -40,13 +40,18 @@ function plotter_setup(data) {
     }
     // initialize
     raw_data = data;
+    raw_data.tasks = _.map(raw_data.tasks, function(d){return d.split('|')[0]; });
     gmean_data = null;
     overlay_list = [];
     gmean_list = [];
     range = [];
     xNameMap = [];
+    d3.select('#generate_plot').html('');
+    d3.select('#generate_plot').text('Reset Plotter');
     d3.select('#chart').html('');
     d3.select('#overlay_select').html('');
+    d3.select('#gmean_select').html('');
+    d3.select('#get_cus_plot_button').html('');
     // convert x value to numerical
     indexXString();
     // check is x is run / parsed_date
@@ -83,7 +88,7 @@ function defaultToGmeanTimePlot() {
         range[i]['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         findAxisScale(seriesXY, xNameMap[i], i);
 
-        simple_plot(raw_data.params, seriesXY, [], xNameMap[i], i);
+        simple_plot(raw_data.params, seriesXY, [], xNameMap[i], i, 'taskTitle');
     }
 }
 /*
@@ -146,15 +151,19 @@ function defaultToGmeanSubPlot() {
             
             newOverlayList = [findMostExpensiveAxis(newRawData, newParams) + ''];
             var newData = data_transform(newRawData, newOverlayList, 'non-overlay');
-            d3.select('#chart').append('h3').append('text').text(raw_data.tasks[k]);
+            var t = d3.select('#chart').append('h3').attr('class', 'task_title');
+            t.append('span').attr('class', 'h_grey').append('text').text('Task Name: ');
+            t.append('span').attr('class', 'h_dark').append('text').text(raw_data.tasks[k]);
             for (j in newData) {
                 console.log('xNameMap[k]');
                 console.log('k = ', k);
                 console.log(xNameMap[k]);
-                simple_plot(newParams, newData[j], newOverlayList, xNameMap[k], k);
+                simple_plot(newParams, newData[j], newOverlayList, xNameMap[k], k, 'normalTitle');
             }
         }
-        d3.select('#chart').append('button').attr('type', 'button').attr('id', 'customizePlot').text('customize plot');
+        d3.select('#chart').append('div').attr('class', 'customizePlotContainer')
+          .append('button').attr('type', 'button').attr('class', 'attractive_button')
+          .attr('id', 'customizePlot').text('customize plot');
         $('#customizePlot').click(function () {d3.select('#chart').html(''); 
                                                generate_overlay_selector();});
     }
@@ -187,30 +196,35 @@ function reduceToGmean(groupedX) {
  *  type is to used to decide whether to generate axes of raw data or gmean data
  */
 function generate_overlay_selector() {
-    var selector_div = d3.select('#overlay_select');
+    var selector_overlay_div = d3.select('#overlay_select');
+    var selector_gmean_div = d3.select('#gmean_select');
     // clear up
-    selector_div.html('');
+    selector_overlay_div.html('');
+    selector_gmean_div.html('');
     var choice = raw_data.params;
-    // choose overlay axis
-    selector_div.append('h5').text('select overlay axis');
-    var formOverlay = selector_div.append('form').attr("id", "overlay_options").attr('action', '').append("fieldset");
-    formOverlay.append('legend').text('select legend:');
+
+    // choose gmean axis
+    var formGmean = selector_gmean_div.append('form').attr('class', 'custom_plot_form').attr("id", "gmean_options").attr('action', '').append("fieldset").attr('width', 600);
+    formGmean.append('legend').style('font-weight', 'bold').text('select geometric mean:');
     for (var i = 2; i < choice.length; i ++ ) {
         //var label = form.append('label').attr('class', 'param_label');
-        formOverlay.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
-        formOverlay.append('label').text(choice[i]).append('br');
+        formGmean.append('input').attr('type', 'checkbox')
+                 .attr('value', choice[i]).attr('id', 'gip-'+choice[i]).attr('index', i-2);
+        formGmean.append('label').attr('for', 'gip-'+choice[i]).text(choice[i]).append('br');
     }
-    // select gmean axis
-    selector_div.append('h5').text('select gmean');
-    var formGmean = selector_div.append('form').attr("id", "gmean_options").attr('action', '').append("fieldset");
-    formGmean.append('legend').text('select geometric mean:');
+
+    // choose overlay axis
+    var formOverlay = selector_overlay_div.append('form').attr('class', 'custom_plot_form').attr("id", "overlay_options").attr('action', '').append("fieldset").attr('width', 600);
+    formOverlay.append('legend').style('font-weight', 'bold').text('select legend:');
     for (var i = 2; i < choice.length; i ++ ) {
         //var label = form.append('label').attr('class', 'param_label');
-        formGmean.append('input').attr('type', 'checkbox').attr('value', choice[i]).attr('index', i-2);
-        formGmean.append('label').text(choice[i]).append('br');
+        formOverlay.append('input').attr('type', 'checkbox')
+                   .attr('value', choice[i]).attr('id', 'oip-'+choice[i]).attr('index', i-2);
+        formOverlay.append('label').attr('for', 'oip-'+choice[i]).text(choice[i]).append('br');
     }
     // add plot button
-    selector_div.append('button').attr('type', 'button').attr('id', 'get_customer_plot').text('Get Plot!');
+    d3.select('#get_cus_plot_button')
+      .append('button').attr('type', 'button').attr('id', 'get_customer_plot').text('Get Plot!');
     $('#get_customer_plot').click(function () { gmean_list = [];
                                                 var checkbox = formGmean.selectAll('input', '[type="checkbox"]');
                                                 checkbox.each(function () {
@@ -269,8 +283,6 @@ function indexXString () {
             xNameMap.push({index: [], values: []});
         }
     }
-    console.log('/////');
-    console.log(xNameMap);
 }
 
 /*
@@ -355,9 +367,12 @@ function plot_generator() {
         for (var k in grouped_series) {
             findAxisScale(grouped_series[k], xNameMap[i], i);
         }
-        d3.select('#chart').append('h3').text(raw_data.tasks[i]);
+        // add task name
+        var t = d3.select('#chart').append('h3').attr('class', 'task_title');
+        t.append('span').attr('class', 'h_grey').text('Task Name: ');
+        t.append('span').attr('class', 'h_dark').text(raw_data.tasks[i]);
         for (var k in grouped_series) {
-            simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i);
+            simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i, 'normalTitle');
         }
     }
 }
@@ -418,7 +433,7 @@ function data_transform (series, overlay_list, mode) {
  * using d3.js
  * t: task index
  */
-function simple_plot(params, series, overlay_list, xNM, t) {
+function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     //setup data
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
@@ -541,32 +556,36 @@ function simple_plot(params, series, overlay_list, xNM, t) {
     }
     // .............
     // add legend
-    var legendSize = 14;
-    var legendMargin = 8;
-    var legend = svg.selectAll('.legend')
-                    .data(color.domain())   // this step is the key to legend
-                    .enter()
-                    .append('g')
-                    .attr('class', 'legend')
-                    .attr('transform', function (d, i) {
-                                           var height = legendSize + legendMargin;
-                                           //var offset = height * color.domain().length / 2;
-                                           var horz = width + 10;
-                                           var vert = i * height + 20;
-                                           return 'translate(' + horz + ', ' + vert + ')';
-                                       });
-    var legendTitle = _.map(overlay_list, function(d) {return '<'+params[Number(d)+2]+'>';});
-    for (var i in legendTitle) {
-        legendTitle[i] = _.reduce(legendTitle[i].split('_'), function(memo, num){return memo == '' ? num : memo+' '+num;}, '');
+    if (lineInfo.length > 1 || lineInfo[0]['key'] != '') {
+        var legendSize = 14;
+        var legendMargin = 8;
+        var legend = svg.selectAll('.legend')
+                        .data(color.domain())   // this step is the key to legend
+                        .enter()
+                        .append('g')
+                        .attr('class', 'legend')
+                        .attr('transform', function (d, i) {
+                                               var height = legendSize + legendMargin;
+                                               //var offset = height * color.domain().length / 2;
+                                               var horz = width + 10;
+                                               var vert = i * height + 20;
+                                               return 'translate(' + horz + ', ' + vert + ')';
+                                           });
+        var legendTitle = _.map(overlay_list, function(d) {return '<'+params[Number(d)+2]+'>';});
+        for (var i in legendTitle) {
+            legendTitle[i] = _.reduce(legendTitle[i].split('_'), function(memo, num){return memo == '' ? num : memo+' '+num;}, '');
+        }
+        svg.append('text').attr('x', width + 10).attr('y', 0)
+           .attr('text-anchor', 'left').style('font-size', '12px')
+           .style('font-weight', 'bold').text(String(legendTitle));
+        legend.append('rect')
+              .attr('width', legendSize).attr('height', legendSize)
+              .style('fill', color).style('stroke', color);
+        legend.append('text')
+              .attr('x', legendSize + legendMargin).attr('y', legendSize - legendMargin)
+              .style('font-size', '12px')
+              .text(function(d) {return d;});
     }
-    svg.append('text').attr('x', width + 10).attr('y', 0).attr('text-anchor', 'left').style('font-size', '12px').style('font-weight', 'bold').text(String(legendTitle));
-    legend.append('rect')
-          .attr('width', legendSize).attr('height', legendSize)
-          .style('fill', color).style('stroke', color);
-    legend.append('text')
-          .attr('x', legendSize + legendMargin).attr('y', legendSize - legendMargin)
-          .style('font-size', '12px')
-          .text(function(d) {return d;});
     // .............
     // add title
     var cTitle = svg.append("text")
@@ -579,10 +598,13 @@ function simple_plot(params, series, overlay_list, xNM, t) {
     for (var i = 2; i < series[0].length; i ++){
         if ($.inArray(i-2+'', overlay_list) == -1 
          && String(series[0][i]).length != 0) {
-            var paramRejoin = _.reduce(params[i].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
-            cTitle.append('svg:tspan')
-                  .style('fill', 'rgb(111,111,111)')
-                  .text(paramRejoin + ':');
+            var paramReduced;
+            if (titleMode == 'normalTitle') {
+                paramRejoin = _.reduce(params[i].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
+                cTitle.append('svg:tspan')
+                      .style('fill', 'rgb(111,111,111)')
+                      .text(paramRejoin + ':');
+            }
             cTitle.append('svg:tspan')
                   .style('font-weight', 'bold')
                   .text('  '+series[0][i]+'  ');
@@ -601,7 +623,9 @@ function simple_plot(params, series, overlay_list, xNM, t) {
             //
         }
     }
-
+    /*
+     * have not implemented function of 'reset canvas' yet
+     */
     function reset() {
       d3.transition().duration(750).tween("zoom", function() {
         var ix = d3.interpolate(x.domain(), [-width / 2, width / 2]),
