@@ -78,6 +78,7 @@ consider running with --clean to remake task table".format(row[0], highest_run))
             result_params.extend(res.readline().split('\t'))
             if result_params[-1] == '\n':
                 result_params.pop()
+            result_params = [p.strip() for p in result_params]
 
             pre_sample_pos = res.tell()
             result_params_sample = res.readline().split('\t')
