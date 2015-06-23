@@ -253,6 +253,7 @@ function generate_overlay_selector() {
         formOverlay.append('label').attr('for', 'oip-'+choice[i]).attr('id', 'olabel-'+choice[i]).text(choice[i]).append('br');
     }
     // add plot button
+    d3.select('#get_cus_plot_button').html('');
     d3.select('#get_cus_plot_button')
       .append('button').attr('type', 'button').attr('id', 'get_customer_plot').text('Get Plot !');
     $('#get_customer_plot').click(function () { gmean_list = [];
@@ -398,8 +399,12 @@ function plot_generator() {
         t.append('span').attr('class', 'h_dark').text(raw_data.tasks[i]);
         var s = d3.select('#chart').append('h4').attr('class', 'task_title');
         s.append('span').attr('class', 'h_grey').text('Geo Mean Axes: ');
-        s.append('span').attr('class', 'h_dark').text(_.map(gmean_list, function(d){return raw_data.params[Number(d)+2];}).join());
-
+        var temp = _.map(gmean_list, function(d){return raw_data.params[Number(d)+2];}).join();
+        if (temp == '') {
+            s.append('span').attr('class', 'h_dark').text('None');
+        } else {
+            s.append('span').attr('class', 'h_dark').text(temp);
+        }
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i, 'normalTitle');
         }
@@ -641,6 +646,8 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                         svgHeight += legendSize+legendMargin; });
 
         svgLegend.attr('width', svgWidth+10).attr('height', svgHeight+80+legendSize);
+    } else {
+        svgLegend.attr('width', 0).attr('height', 0);
     }
     // .............
     // add title
@@ -666,6 +673,13 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                   .text('  '+series[0][i]+'  ');
         }
     }
+    // ..............
+    // save image
+    //canvg('canvas', d3.select('svg').html());
+    //canvg('canvas', 'file.svg', {ignoreMouse: true, ignoreAnimation: true});
+    //var canvas = document.getElementById('canvas');
+    //var img = canvas.toDataURL('image/png');
+    //document.write('<img src="'+img+'"/>');
     // ..............
     // interaction
     function zoomed() {
