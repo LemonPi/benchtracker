@@ -332,7 +332,7 @@ function parse_filter( filter ) {
 	var parsed_filter = ['fp='];
 	var filtered_param = filter.getElementsByClassName('filter_param');
 	if (filtered_param.length === 0) return [];
-	filtered_param = filtered_param[0].value.split(' ')[0];
+	filtered_param = filtered_param[0].value;
 	parsed_filter.push(filtered_param);
 	
 	var filter_type = filter.getElementsByClassName('filter_sel');

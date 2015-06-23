@@ -75,8 +75,8 @@ def get_param_desc():
     mode = request.args.get('m', 'range')   # by default give ranges, overriden if param is text
     try:
         (param_type, param_val) = d.describe_param(param, mode, tasks, database)
-    except ValueError:
-        return jsonify({'status': 'Unsupported type mode! ({})'.format(mode)})
+    except ValueError as e:
+        return jsonify({'status': 'Parameter value error: {}'.format(e)})
     return jsonify({'status': 'OK', 
     'tasks':tasks, 
     'param': param,
