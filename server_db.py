@@ -205,14 +205,15 @@ def parse_data():
     Else false for no exception occruance, with second item being a 3-tuple.
     """
     # split to get name only in case type is also given
-    x_param = request.args.get('x').split()[0]
-    y_param = request.args.get('y').split()[0]
-    print(x_param, y_param);
+    x_param = request.args.get('x')
+    y_param = request.args.get('y')
 
     if not x_param:
         return (True, jsonify({'status': 'Missing x parameter!'})) 
     if not y_param:
         return (True, jsonify({'status': 'Missing y parameter!'})) 
+    x_param = x_param.split()[0]
+    y_param = y_param.split()[0]
 
     try:
         (filtered_params, filters) = parse_filters()

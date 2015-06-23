@@ -21,17 +21,20 @@ select {
 select:focus {
     outline: 0;
 }
+#selection_bar {
+	display:flex;
+	overflow:hidden;
+	background-color:#3B3738;
+	flex-wrap:wrap;
+}
 .box_wrapper {
 	height:350px;
 	overflow:hidden;
-	width:20%;
-	display:inline-block;
 	margin-right:-18px;
-	font-size:16px;
 	position:relative;
+	flex:0 0 20%;
 }
-.filter_wrapper {
-}
+
 .selection_box {
 	height:100%;
 	width:100%;
@@ -96,13 +99,7 @@ select:focus {
 .box_header {
 	text-align:center;
 }
-#selection_bar {
-	width:100%;
-	overflow-y:hidden;
-	overflow-x:auto;
-	font-size:0;
-	background-color:#3B3738;
-}
+
 #task_select {
 	background-color:white;
 }
@@ -115,15 +112,30 @@ select:focus {
 	color:white;
 }
 #add_filter {
-	cursor: pointer;
-	background-color: #EA7B30;
 	text-align:center;
-	width:100px;
 	visibility:hidden;
+	flex:1 0.5 10%;
 }
+.page_divider {
+	cursor: pointer;
+	text-align:center;
+	background-color:#EA7B30;
+	color:#5A4A3A;
+}
+
+/* plotter canvas */
 #display_canvas {
+	position:relative;
 	left:0px;
 }
+.options_container {
+	display:flex;
+}
+.divider_options {
+	flex:1;
+	line-height:2em;	
+}
+
 .custom_pannel {
     display: flex;
 }
@@ -159,10 +171,7 @@ fieldset {
     overflow-x: auto;
     overflow-y: auto;
 }
-#generate_plot {
-	width:70%;
-	text-align: center
-}
+
 #get_cus_plot_button {
     margin-left: auto;
     margin-right: auto;
@@ -178,37 +187,8 @@ fieldset {
     height: 70;
     float: left;
 }
-#generate_plot {
-    width: 300;
-    height: 50;
-    position: relative;
-    left: 50%;
-}
-.button_container {
-    height: 100;
-}
-.attractive_button {
-	background-color:#444;
-	-moz-border-radius:6px;
-	-webkit-border-radius:6px;
-	border-radius:6px;
-	border:1px solid #dcdcdc;
-	display:inline-block;
-	cursor:pointer;
-	color:#999;
-	font-family:Arial;
-	font-size:15px;
-	font-weight:bold;
-	padding:6px 24px;
-	text-decoration:none;
-}
-.attractive_button:hover {
-	background-color:#e9e9e9;
-}
-.attractive_button:active {
-	position:relative;
-	top:1px;
-}
+
+
 svg {
   font: 10px sans-serif;
   overflow-x: auto;
