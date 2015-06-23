@@ -181,8 +181,12 @@ fieldset {
 #generate_plot {
     width: 300;
     height: 50;
-    position: relative;
-    left: 50%;
+    float: left;
+}
+#customizePlot {
+    float: left;
+    width: 300;
+    height: 50;
 }
 .button_container {
     height: 100;
@@ -208,6 +212,23 @@ fieldset {
 .attractive_button:active {
 	position:relative;
 	top:1px;
+}
+.canvas_container {
+    width: 530;
+    height: 500;
+    float: left;
+}
+.chart_container {
+    width: 670;
+    height: 500;
+    float:left;
+}
+.legend_container {
+    width: 130;
+    height: 500;
+    float: left;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 svg {
   font: 10px sans-serif;
