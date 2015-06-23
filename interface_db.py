@@ -25,20 +25,18 @@ def describe_tasks(tasks, dbname = "results.db"):
     cursor = db.cursor()
     if not isinstance(tasks,list):
         tasks = [tasks]
-    parameter_sub = sql_substitute(tasks)
-    query_command = "SELECT sql FROM sqlite_master WHERE type='table' AND name IN ({});".format(parameter_sub)
-    cursor.execute(query_command, tasks)
-    schemas = cursor.fetchall()
+
     # only the shared columns will remain
     shared_params = []
-    for schema in schemas:
-        params = [param.strip() for param in schema[0].split('(')[1].split(')')[0].split(',')]
-        if (params[-1] == 'PRIMARY KEY'):
-            params.pop()
+    for task in tasks:
+        query_command = "pragma table_info([{}])".format(task);
+        cursor.execute(query_command);
+        task_params = [" ".join((row[1], row[2])) for row in cursor.fetchall()]
         if shared_params:
-            shared_params = intersection(shared_params, params)
+            shared_params = intersection(shared_params, task_params)
         else:
-            shared_params = params
+            shared_params = task_params
+        
     return shared_params
     
 

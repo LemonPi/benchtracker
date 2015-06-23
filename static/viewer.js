@@ -62,7 +62,6 @@ function update_params() {
 		report_debug("updated params");
 	}
 	// to assure correct sequence, populate param windows must be called inside the functions that update params
-	report_debug("---------------");
 }
 function clear_param_windows() {
 	while (x_param.firstChild) x_param.removeChild(x_param.firstChild);
@@ -140,7 +139,6 @@ function create_filter_window(selected) {
 	}
 	else {report_debug(selected);}
 
-	report_debug("filter window created");
 	return filter;
 
 }
