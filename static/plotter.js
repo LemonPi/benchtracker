@@ -245,7 +245,7 @@ function generate_overlay_selector() {
     // choose overlay axis
     // TODO: disable the selection by setting the attr value 'disabled' = 'on'
     var formOverlay = selector_overlay_div.append('form').attr('class', 'custom_plot_form').attr("id", "overlay_options").attr('action', '').append("fieldset").attr('width', 600);
-    formOverlay.append('legend').style('font-weight', 'bold').text('select legend:');
+    formOverlay.append('legend').style('font-weight', 'bold').text('select line series:');
     for (var i = 2; i < choice.length; i ++ ) {
         //var label = form.append('label').attr('class', 'param_label');
         formOverlay.append('input').attr('type', 'checkbox')
