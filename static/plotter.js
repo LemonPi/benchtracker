@@ -54,6 +54,7 @@ function plotter_setup(data) {
     d3.select('#overlay_select').html('');
     d3.select('#gmean_select').html('');
     d3.select('#get_cus_plot_button').html('');
+    d3.select('#save_plot_button').html('');
     // convert x value to numerical
     indexXString();
     // check is x is run / parsed_date
@@ -485,7 +486,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     for (var k in lineData) {
         var lineVal = [];
         for (var j = 0; j < lineData[k].length; j ++ ){
-            lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
+            lineVal.push({x: Number(lineData[k][j][0]), y: lineData[k][j][1]});
         }
         if (xNM.values.length == 0) {
             lineVal = _.sortBy(lineVal, 'x');
@@ -758,8 +759,6 @@ function savePlot() {
           .attr('version',1.1).attr('xmlns', 'http://www.w3.org/2000/svg').html(html);
         d3.select('#temp').select('.legend_svg').attr('x', plotSize['width']);
         html = d3.select('#temp').node().innerHTML;
-        //gpn = d3.select(pn).node.parentNode;
-        //html = d3.select(gpn).
         var imgsrc = 'data:image/svg+xml;base64,'+btoa(html);
         //var img = '<img src="'+imgsrc+'"/>';
         //d3.select('body').append('div').attr('id', 'test-svg-conversion').html(img);
