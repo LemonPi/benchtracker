@@ -143,8 +143,13 @@ select:focus {
 #customizePlot {
 	flex:1 0 100%;
 	line-height:2em;
-	visibility: hidden
+	visibility: hidden;
 }
+/*
+#savePlot {
+    visibility: hidden;
+}
+*/
 .custom_pannel {
     display: flex;
     flex:1;
