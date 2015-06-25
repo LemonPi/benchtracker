@@ -3,6 +3,99 @@ Track benchmarks locally and interactively display the results.
 A collection of chained tools are provided to create multiple entry points for different projects.
 Your project can enter and exit at any point!
 
+# Get started
+(TODO, configure benchtracker into python package and allow people to pip install it)
+
+# Example usage (VTR)
+### Basic
+Example paths are used instead of placeholders to minimize confusion. Replace
+occurances of `~/benchtracker` with your actual benchtracker directory.
+A VTR user first runs the task, parses it, then populates the database with it:
+```
+bash$ cd ~/vtr/vtr_flow/scripts/
+scripts$ ./run_vtr_task.pl checkin_reg
+scripts$ ./parse_vtr_task.pl check_reg
+scripts$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit
+```
+VTR has its own `run_task` and `parse_task` scripts, so it enters benchtracker at the `populate_db` stage.
+`checkin_reg` is the name of the task to task, and it exists as a folder shown below:
+```
+vtr_flow
+    tasks
+        checkin_reg
+            config
+                config.txt
+            run1
+            run2
+            run3
+            ...
+```
+
+Each VTR benchmark is uniquely defined by its combination of architecture (`arch`) and circuit.
+
+### Calling parse script
+A more advanced and safer usage would be to let `populate_db` call the parse script for the runs
+that are not parsed yet:
+<pre>
+bash$ ~/vtr/vtr_flow/scripts/run_vtr_task.pl checkin_reg
+bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit <b>-s 
+"~/vtr/vtr_flow/scripts/parse_vtr_task.pl {task_dir} -run {run_number}"</b>
+</pre>
+
+Where the called script is able to receive information about the task and run via reflection in `{task_dir}` and `{run_number}`.
+
+### Using task list
+A task list (file with name of tasks on separate lines) can be used:
+<pre>
+bash$ ~/vtr/vtr_flow/scripts/<b>run_vtr_task.pl</b> -l ~/vtr/vtr_flow/tasks/regression_tests/vtr_reg_strong/task_list.txt
+bash$ ~/benchtracker/populate_db.py regression_tests/vtr_reg_strong/task_list.txt <b>--root_directory
+~/vtr/vtr_flow/tasks/</b> -k arch circuit -s "~/vtr/vtr_flow/scripts/parse_vtr_task.pl {task_dir} -run {run_number}" 
+</pre>
+
+Specifying the root directory is necessary here since the tasks listed in the `task_list.txt` are relative
+paths from `~/vtr/vtr_flow/tasks/`. Specifying the root directory also means the input task list is specified
+relative to it. Otherwise, the commands, such as the parse script, remain the same.
+
+### Specifying database
+The syntax for specifying database is the same for `populate_db` and `server_db`:
+<pre>
+bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit <b>-d ~/benchdata/testing.db</b>
+bash$ ~/benchtracker/server_db.py <b>-d ~/benchdata/testing.db</b>
+</pre>
+
+## Serving database
+Serving locally is as simple as a call to
+```
+bash$ ~/benchtracker/server_db.py
+```
+This is fine if your database is called `results.db` in the directory the script was run, and port 5000 is open.
+
+For more fine tuning,
+```
+bash$ ~/benchtracker/server_db.py --database ~/benchdata/results.db --port 8080
+```
+Commandline options and their default values can be found by running `server_db` with `-h`.
+
+### Production serving
+The server is configured in debug mode by default, and can be changed to release mode by
+changing `server_db.py`'s last line to `app.run(host='0.0.0.0', port=port)`.
+The server is then found under the IP address of your machine.
+
+## Viewing database
+Assuming `server_db` is running on port 5000 and has a valid database, the viewer can be 
+reached at 
+```
+http://localhost:5000/view
+```
+The first box lists the name of the tasks in the served database, and might look like:
+![task_box](photos/tasks.png)
+
+Clicking on tasks selects them if they were not selected and unselects them if they were.
+Selecting tasks automatically populates the x and y parameter boxes with the tasks' <b>shared parameters</b>:
+![shared_params](photos/params.png)
+Note that the y-parameter has to be numeric.
+
+
 
 # Definitions
 **Task**: A collection of benchmarks that are run together. Is defined by a [`config.txt` file](#config_file) inside `<task_dir>/config/`. Structure should look like:
@@ -42,13 +135,13 @@ Your project can enter and exit at any point!
   interest (i.e.: y axis) is minimum channel width, then the "gmean" operation over "circuits" will merge the
   circuit axis by calculating the geometric mean of all circuits' minimum channel width.
 
-**Overlay**: in the plotter, if you choose an overlay axis "P", then all lines in the same plot will have the same parameter 
-  values except P value. In other words, the legend of the plot in this case will be "P".
+**Line Series**: in the plotter, if you choose a parameter to be a line series, 
+then a different line will be produced for each distinct value of that parameter on each plot.
 
 # Tools
 Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow (pictured below), see command line help for detailed usage of each tool.  
 
-![toolchain-flow](flow.png)
+![toolchain-flow](photos/flow.png)
 
 Listed in order that they should be run:
 

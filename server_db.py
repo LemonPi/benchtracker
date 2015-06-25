@@ -24,6 +24,7 @@ except ImportError:
 app = Flask(__name__)
 CORS(app)
 database = "results.db" # default; changed by argument
+port = 5000
 
 
 
@@ -43,9 +44,14 @@ def parse_args(ns=None):
     parser.add_argument("-d", "--database",
             default="results.db",
             help="name of database to store results in; default: %(default)s")
+    parser.add_argument("-p", "--port",
+            default=5000,
+            type=int,
+            help="port number to listen on; default: %(default)s")
     params = parser.parse_args(namespace=ns)
-    global database
+    global database, port
     database = params.database
+    port = params.port
     return params
 
 
@@ -235,4 +241,4 @@ def parse_data():
 
 if __name__ == '__main__':
     parse_args()
-    app.run(debug=True)
+    app.run(debug=True, port=port)
