@@ -6,6 +6,10 @@
 // 5. save graph
 // 6. fix the offline plotter
 
+// 7. getBBox() is inconsistent among console log value and the final output value
+// 8. also inconsistent between chrome and firefox
+// 9. probably should calculate bound box after web is fully loaded
+
 // Some const
 // if x axis is an element of timeParam, then the default behavior is to gmean everything
 var timeParam = ['run', 'parsed_date'];
@@ -536,6 +540,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // ...............
     // assemble
     var chart = d3.select('#chart').append('div').attr('class', 'chart_container');
+    var saveButton = chart.append('button').attr('type', 'button').attr('class', 'save_plot').text('save as png').on('click', savePlot);
     var svg = chart.append('div').attr('class', 'canvas_container').append('svg')
         .attr("width", width + plotMargin['left'] + plotMargin['right'])
         .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
@@ -545,10 +550,11 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     if (xNM.values.length == 0) {
         svg.call(zoom);
     }
-    var canvas = svg.append("rect").attr('fill', '#f0f0f0')
+    var canvas = svg.append("rect")
+        //.attr('class', 'canvas_peripheral')
+        .attr('fill', '#f0f0f0')
         .attr("width", width)
         .attr("height", height);
-
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
@@ -607,6 +613,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // .............
     // add legend
     // the svg size should be chosen to fit the text
+    d3.selectAll('svg').style('font','10px sans-serif');
     var svgWidth = 0;
     var svgHeight = 0;
     var svgLegend = chart.append('div').attr('class', 'legend_container').append('svg'); //.attr('width', 130).attr('height', 500);
@@ -648,7 +655,6 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         legend.each(function() {
                         svgWidth = (svgWidth > this.getBBox().width) ? svgWidth : this.getBBox().width;
                         svgHeight += legendSize+legendMargin; });
-
         svgLegend.attr('width', svgWidth+10).attr('height', svgHeight+80+legendSize);
     } else {
         svgLegend.attr('width', 0).attr('height', 0);
@@ -677,22 +683,65 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                   .text('  '+series[0][i]+'  ');
         }
     }
-    /*
+    // dealing with styling
+    var canvas = svg.append("rect")
+        .attr('class', 'canvas_peripheral')
+        .attr('fill', 'none')
+        .attr("width", width)
+        .attr("height", height);
+
+
+    d3.selectAll('rect.canvas_peripheral').style('stroke', '#000');
+    d3.selectAll('path').style('fill', 'none');
+    d3.selectAll('path.domain').style('stroke', '#fff');
+    d3.selectAll('.axis line').style('stroke', '#fff').style('fill', 'none');
+    d3.selectAll('.axis path').style('stroke', '#fff').style('fill', 'none');
+    d3.selectAll('.line').style('fill', 'none').style('stroke-width','1.5px');
     // ..............
     // save image
-    d3.selectAll('path').attr('fill', 'none');
-    d3.select('svg').attr('xmlns', 'http://www.w3.org/2000/svg');
-    canvg('canvas', d3.select('svg').html());
-    //canvg('canvas', 'file.svg', {ignoreMouse: true, ignoreAnimation: true});
-    var canvas = document.getElementById('canvas');
-    var img = canvas.toDataURL('image/png');
-    d3.select('body').append('div').html('<img src="'+img+'"/>');
+    function savePlot() {
+    //var html = d3.select('svg').attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg').node().parentNode.innerHTML;
+        var pn = saveButton.node().parentNode;
+        var html = d3.select(pn).select('.canvas_container').select('svg')
+                     .attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg')
+                     .node().parentNode.innerHTML;
+        var html2 = d3.select(pn).select('.legend_container').select('svg')
+                     .attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg')
+                     .node().parentNode.innerHTML;
+        html = html2+html;
+        //TODO: solution: wrap both container with big svg, reset the size
+        d3.select('body').append('div').attr('id', 'test').append('svg').attr('width', 1000).attr('height', 1000).attr('version',1.1).attr('xmlns', 'http://www.w3.org/2000/svg').html(html);
+        html = d3.select('#test').node().innerHTML;
+        console.log(html);
+        //gpn = d3.select(pn).node.parentNode;
+        //html = d3.select(gpn).
+        var imgsrc = 'data:image/svg+xml;base64,'+btoa(html);
+        //var img = '<img src="'+imgsrc+'"/>';
+        //d3.select('body').append('div').attr('id', 'test-svg-conversion').html(img);
+        d3.select('body').append('canvas');
+        var canvas = document.querySelector('canvas');
+        var context = canvas.getContext('2d');
+        var image = new Image;
+        image.src = imgsrc;
+        image.onload = function() {
+            context.drawImage(image, 0, 0);
+            var canvasdata = canvas.toDataURL('image/png');
+            var pngimg = '<img src="'+canvasdata+'">';
+            var a = document.createElement('a');
+            a.download = 'sample.png';
+            a.href = canvasdata;
+            a.click();
+        }
+        
+    }
+    //d3.select('body').append('div').html('<img src="'+img+'"/>');
     //document.write('<img src="'+img+'"/>');
-    */
     // ..............
     // interaction
     function zoomed() {
         if (xNM.values.length == 0) {
+            // update styling
+            d3.selectAll('.axis line').style('stroke', '#fff').style('fill','none');
             svg.select(".x.axis").call(xAxis);
             svg.select(".y.axis").call(yAxis);
             svg.selectAll('.line').attr('class', 'line').attr('d', lineGen);
