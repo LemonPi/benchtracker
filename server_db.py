@@ -17,7 +17,7 @@ except ImportError:
     parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.insert(0, parentdir)
 
-    from flask.ext.cors import CORS
+    from flask_cors import CORS
 
 
 
@@ -44,6 +44,7 @@ def parse_args(ns=None):
             default="results.db",
             help="name of database to store results in; default: %(default)s")
     params = parser.parse_args(namespace=ns)
+    global database
     database = params.database
     return params
 
@@ -66,6 +67,10 @@ def catch_operation_errors(func):
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     return jsonify({'tasks':d.list_tasks(database)})
+
+@app.route('/db', methods=['GET'])
+def get_database():
+    return jsonify({'database':database})
 
 @app.route('/param', methods=['GET'])
 @catch_operation_errors
