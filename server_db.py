@@ -167,7 +167,9 @@ def get_view():
 
 @app.errorhandler(404)
 def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
+    resp = jsonify({'error': 'Not found'})
+    resp.status_code = 404
+    return resp
 
 def parse_db():
     global database
