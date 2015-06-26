@@ -57,7 +57,7 @@ function update_params() {
 		populate_param_windows();
 	}
 	else {
-		$.getJSON(root_url+'/tasks/?'+create_task_query(), get_params);
+		$.getJSON(root_url+'/params/?'+create_task_query(), get_params);
 		add_filter.style.visibility = 'visible';
 		report_debug("updated params");
 	}
