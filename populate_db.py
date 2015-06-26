@@ -250,6 +250,7 @@ def parse_args(ns=None):
             default=[],
             help="the combination of key parameters that defines a unique benchmark;")
     params = parser.parse_args(namespace=ns)
+    params.database = os.path.expanduser(params.database)
 
     # if a task list is given (where each line is the path to a task)
     if params.root_directory:

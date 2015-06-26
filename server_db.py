@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, request, url_for, make_response, render_template, send_file
 import sqlite3
 import interface_db as d
+import os.path
 import urlparse
 import argparse
 import textwrap
@@ -50,7 +51,7 @@ def parse_args(ns=None):
             help="port number to listen on; default: %(default)s")
     params = parser.parse_args(namespace=ns)
     global database, port
-    database = params.database
+    database = os.path.expanduser(params.database)
     port = params.port
     return params
 
@@ -61,6 +62,8 @@ def catch_operation_errors(func):
     def task_checker(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except IOError as e:
+            return jsonify({'status': 'File does not exist! ({})'.format(e)})
         except IndexError:
             return jsonify({'status': 'Index out of bounds! (likely table index)'})
         except sqlite3.OperationalError as e:
@@ -71,8 +74,10 @@ def catch_operation_errors(func):
 
 @app.route('/')
 @app.route('/tasks', methods=['GET'])
+@catch_operation_errors
 def get_tasks():
-    return jsonify({'tasks':d.list_tasks(database)})
+    database = parse_db()
+    return jsonify({'tasks':d.list_tasks(database), 'database':database})
 
 @app.route('/db', methods=['GET'])
 def get_database():
@@ -81,6 +86,7 @@ def get_database():
 @app.route('/param', methods=['GET'])
 @catch_operation_errors
 def get_param_desc():
+    database = parse_db()
     tasks = parse_tasks()
     param = request.args.get('p')
     mode = request.args.get('m', 'range')   # by default give ranges, overriden if param is text
@@ -89,6 +95,7 @@ def get_param_desc():
     except ValueError as e:
         return jsonify({'status': 'Parameter value error: {}'.format(e)})
     return jsonify({'status': 'OK', 
+    'database':database,
     'tasks':tasks, 
     'param': param,
     'type': param_type,
@@ -97,9 +104,10 @@ def get_param_desc():
 @app.route('/tasks/', methods=['GET'])
 @catch_operation_errors
 def get_shared_params():
+    database = parse_db()
     tasks = parse_tasks()
     params = d.describe_tasks(tasks, database)
-    return jsonify({'status': 'OK', 'tasks':tasks, 'params': params})
+    return jsonify({'status': 'OK', 'database':database, 'tasks':tasks, 'params': params})
 
 @app.route('/data', methods=['GET'])
 @catch_operation_errors
@@ -108,8 +116,9 @@ def get_filtered_data():
     if exception:
         return payload
     else:
-        (tasks, params, data) = payload
+        (databaes, tasks, params, data) = payload
         return jsonify({'status': 'OK', 
+            'database':database,
             'tasks':tasks, 
             'params':params,
             'data':data})
@@ -124,7 +133,7 @@ def get_csv_data():
     if exception:
         return payload
     else:
-        (tasks, params, data) = payload
+        (database, tasks, params, data) = payload
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'a', zipfile.ZIP_DEFLATED) as zf:
             t = 0
@@ -160,6 +169,12 @@ def get_view():
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
+def parse_db():
+    global database
+    db = request.args.get('db')
+    if db:
+        database = os.path.expanduser(db)
+    return database
 
 def parse_tasks():
     tasks = request.args.getlist('t')
@@ -215,6 +230,7 @@ def parse_data():
     First item is True for an exception occurance, with the 2nd item being the json response for error.
     Else false for no exception occruance, with second item being a 3-tuple.
     """
+    database = parse_db()
     # split to get name only in case type is also given
     x_param = request.args.get('x')
     y_param = request.args.get('y')
@@ -236,7 +252,7 @@ def parse_data():
     tasks = parse_tasks()
 
     (params, data) = d.retrieve_data(x_param, y_param, filters, tasks, database)
-    return (False, (tasks, params, data))
+    return (False, (database, tasks, params, data))
 
 
 if __name__ == '__main__':
