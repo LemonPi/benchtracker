@@ -92,10 +92,19 @@ The first box lists the name of the tasks in the served database, and might look
 
 Clicking on tasks selects them if they were not selected and unselects them if they were.
 Selecting tasks automatically populates the x and y parameter boxes with the tasks' <b>shared parameters</b>:
-![shared_params](photos/params.png)
+![shared_params](photos/params.png)  
 Note that the y-parameter has to be numeric.
 
+The minimum selection for a full query is 1 task, x parameter, and y parameter selected,
+with the output options on the dividing row available:
+![output_options](photos/divider_options.png)
 
+The data can be visualized by generating interactive plots, or downloaded as csv files.
+The current selection is saved in query string format by the third button.
+
+## Plot
+A simple plot without any filters might look like:
+![basic_plot](photos/plot.png)
 
 # Definitions
 **Task**: A collection of benchmarks that are run together. Is defined by a [`config.txt` file](#config_file) inside `<task_dir>/config/`. Structure should look like:
