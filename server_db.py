@@ -23,7 +23,7 @@ except ImportError:
 
 
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app)
 database = "results.db" # default; changed by argument
 port = 5000
 
@@ -101,7 +101,7 @@ def get_param_desc():
     'type': param_type,
     'val': param_val})
 
-@app.route('/tasks/', methods=['GET'])
+@app.route('/params/', methods=['GET'])
 @catch_operation_errors
 def get_shared_params():
     database = parse_db()
@@ -259,4 +259,4 @@ def parse_data():
 
 if __name__ == '__main__':
     parse_args()
-    app.run(debug=True, port=port)
+    app.run(host='0.0.0.0', port=port)
