@@ -1,6 +1,5 @@
 // globals
 var root_url = 'http://' + window.location.href.split('/')[2];
-report_debug(root_url);
 var tasks = new Set();
 var x_sel = y_sel = "";
 var task_cached = "";
