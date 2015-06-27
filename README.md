@@ -105,35 +105,61 @@ The current selection is saved in query string format by the third button.
 ## Plot
 The plotter is designed to support basic and advanvced usage. 
 After clicking the <b>"generating plot"</b> (or <b>"reset plotter"</b>) button, default plots are generated. The policy for generating default plots are as follow:
-  - if the `x axis` chosen is related to time (e.g.: `revision number`, `parse date`...), then all the (x,y) series of one single task (regardless of other parameter values) will be compressed by calculating the geometric mean of the y-axis. 
+  - if the `x axis` chosen is related to time (e.g.: `revision number`, `parse date`...), then all the tuples of one single task (regardless of other parameter values) will be reduced into a single (x,y) series, by calculating the geometric mean of the y-axis. 
 So the number of resulting plots will equal to number of tasks, and the number of lines in one plot will be 1. 
     - As an example, suppose the raw data before calculating the geometric mean is: 
 
-      | Tasks  | run (x axis)  | min channel width (y axis)  | fc  | wire length  |
-      | ------ | ------------- | --------------------------- | --- | ------------ |
-      | 1      | 1             | 40                          | 0.1 | 1            |
-      | 1      | 1             | 70                          | 0.1 | 2            |
-      | 1      | 1             | 50                          | 0.4 | 1            |
-      | 1      | 1             | 60                          | 0.25| 4            |
-      | 1      | 2             | 43                          | 0.1 | 1            |
-      | 1      | 2             | 68                          | 0.1 | 2            |
-      | 1      | 2             | 51                          | 0.4 | 1            |
-      | 1      | 2             | 62                          | 0.25| 4            |
+      | Tasks  | run (`x` axis)  | min channel width (`y` axis)  | fc  | wire length  |
+      |:------:|:---------------:|:-----------------------------:|:---:|:------------:|
+      | 1      | 1               | 40                            | 0.1 | 1            |
+      | 1      | 1               | 70                            | 0.1 | 2            |
+      | 1      | 1               | 50                            | 0.4 | 1            |
+      | 1      | 1               | 60                            | 0.25| 4            |
+      | 1      | 2               | 43                            | 0.1 | 1            |
+      | 1      | 2               | 68                            | 0.1 | 2            |
+      | 1      | 2               | 51                            | 0.4 | 1            |
+      | 1      | 2               | 62                            | 0.25| 4            |
       
       And the resulting data after the geometric mean of this default plotter is:
 
-      | Tasks  | run (x axis)  | min channel width (y axis)  | fc  | wire length  |
-      | ------ | ------------- | --------------------------- | --- | ------------ |
-      | 1      | 1             | 53.84                       | --  | --           |
-      | 1      | 2             | 55.14                       | --  | --           |
-The below plot is generated when 2 tasks are selected and the x axis is `run`:
+      | Tasks  | run (`x` axis)  | min channel width (`y` axis)  | fc  | wire length  |
+      |:------:|:---------------:|:-----------------------------:|:---:|:------------:|
+      | 1      | 1               | 53.84                         | --  | --           |
+      | 1      | 2               | 55.14                         | --  | --           |
+The below plot is generated when 2 tasks are selected and the `x` axis is `run`:
 ![default_plot_1](photos/default_plot_1.png)
-  - if the x axis chosen is not related to time (e.g.: `fc`, `circuit`...), then 
+  - if the x axis chosen is not related to time (e.g.: `fc`, `circuit`...), then the plotter will reduce the data by calculating the geometric mean of y axis, over tuples with the same `x` and other parameters. 
+The following tables illustrate the data reduction process:
+    - Suppose the raw data is as follow:
 
-Markdown | Less | Pretty
---- | --- | ---
-*Still* | `renders` | **nicely**
-1 | 2 | 3
+      | Tasks  | run  | min channel width (`y` axis)  | fc (`x` axis)  | wire length (`parameter`)  | circuit (`geo mean`)   |
+      |:------:|:----:|:-----------------------------:|:--------------:|:--------------------------:|:----------:|
+      | 1      | 1    | 70                            | 0.1            | 1            | a.blif     |
+      | 1      | 1    | 110                           | 0.1            | 1            | b.blif     |
+      | 1      | 1    | 68                            | 0.1            | 2            | a.blif     |
+      | 1      | 1    | 107                           | 0.1            | 2            | b.blif     |
+      | 1      | 1    | 73                            | 0.1            | 4            | a.blif     |
+      | 1      | 1    | 98                            | 0.1            | 4            | b.blif     |
+      | 1      | 1    | 60                            | 0.25           | 1            | a.blif     |
+      | 1      | 1    | 73                            | 0.25           | 1            | b.blif     |
+      | 1      | 1    | 43                            | 0.25           | 2            | a.blif     |
+      | 1      | 1    | 88                            | 0.25           | 2            | b.blif     |
+      | 1      | 1    | 63                            | 0.25           | 4            | a.blif     |
+      | 1      | 1    | 86                            | 0.25           | 4            | b.blif     |
+      
+    - Then the data after reduction by geometric mean is:
+      
+      | Tasks  | run  | min channel width (`y` axis)  | fc (`x` axis)  | wire length (`parameter`)  |
+      |:------:|:----:|:-----------------------------:|:--------------:|:--------------------------:|
+      | 1      | 1    | 87.75                         | 0.1            | 1                          |
+      | 1      | 1    | 85.30                         | 0.1            | 2                          |
+      | 1      | 1    | 85.58                         | 0.1            | 4                          |
+      | 1      | 1    | 66.73                         | 0.25           | 1                          |
+      | 1      | 1    | 61.51                         | 0.25           | 2                          |
+      | 1      | 1    | 73.61                         | 0.25           | 4                          |
+  - After the geometric mean is calculated, a legend is selected such that the resulting number of plots is minimized.
+    - The following screenshot shows the resulting plots:
+![default_plot_2](photos/default_plot_2.png)
 
 # Definitions
 **Task**: A collection of benchmarks that are run together. Is defined by a [`config.txt` file](#config_file) inside `<task_dir>/config/`. Structure should look like:
