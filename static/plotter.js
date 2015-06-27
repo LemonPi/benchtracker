@@ -479,6 +479,7 @@ function epochTimeConverter(unixEpochTime, paramX) {
     // deal with unix epoch time
     if (unixEpoch.indexOf(paramX) != -1) {
         var date = new Date(Number(unixEpochTime) * 1000);
+        /*
         date = date.toLocaleString().split(' ');
         date = date[0].substring(0, date[0].length-1);
         date = date.split('/');
@@ -486,9 +487,10 @@ function epochTimeConverter(unixEpochTime, paramX) {
         date[1] = (date[1].length == 1) ? '0'+date[1] : date[1];
         date = [date[2], date[0], date[1]];
         date = _.reduce(date, function(memo, num){return memo == '' ? num : memo+''+num;}, '');
+        */
         unixEpochTime = date;
     }
-    unixEpochTime = isNaN(Number(unixEpochTime)) ? unixEpochTime : Number(unixEpochTime);
+    //unixEpochTime = isNaN(Number(unixEpochTime)) ? unixEpochTime : Number(unixEpochTime);
     return unixEpochTime;
 }
 
@@ -499,25 +501,30 @@ function epochTimeConverter(unixEpochTime, paramX) {
  */
 function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     //setup data
-    range[t]['x'][0] = epochTimeConverter(range[t]['x'][0], params[0]);
-    range[t]['x'][1] = epochTimeConverter(range[t]['x'][1], params[0]);
+    //range[t]['x'][0] = epochTimeConverter(range[t]['x'][0], params[0]);
+    //range[t]['x'][1] = epochTimeConverter(range[t]['x'][1], params[0]);
 
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
     for (var k in lineData) {
         var lineVal = [];
         for (var j = 0; j < lineData[k].length; j ++ ){
-            lineData[k][j][0] = epochTimeConverter(lineData[k][j][0], params[0]);
+            //lineData[k][j][0] = epochTimeConverter(lineData[k][j][0], params[0]);
             if (isNaN(Number(lineData[k][j][0]))) {
                 lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             } else {
-                lineVal.push({x: Number(lineData[k][j][0]), y: lineData[k][j][1]});
+                lineData[k][j][0] = Number(lineData[k][j][0]);
+                //lineData[k][j][0] = epochTimeConverter(lineData[k][j][0], params[0]);
+                lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             }
         }
         console.log('lineVal');
         console.log(lineVal);
         if (xNM.values.length == 0) {
             lineVal = _.sortBy(lineVal, 'x');
+            lineVal = _.map(lineVal, function(d) {return {x: epochTimeConverter(d.x, params[0]), y: d.y}});
+            console.log('sort lineVal');
+            console.log(lineVal);
         } else {
             // sort by the order in xNM.values
             lineVal = _.map(lineVal, function(d) {return {x: xNM.values.indexOf(d.x), y: d.y};} );
@@ -546,12 +553,21 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         range[t]['y'][0] -= 0.5*range[t]['y'][0];
         range[t]['y'][1] += 0.5*range[t]['y'][1];
     }
-    console.log('xnm values');
-    console.log(xNM.values);
     if (xNM.values.length == 0) {
-        x = d3.scale.linear()
-              .domain([range[t]['x'][0] - 0.1*(range[t]['x'][1]-range[t]['x'][0]), range[t]['x'][1] + 0.1*(range[t]['x'][1]-range[t]['x'][0])])
-              .range([0, width]);
+        var xAxisRange = [range[t]['x'][0] - 0.1*(range[t]['x'][1]-range[t]['x'][0]), range[t]['x'][1] + 0.1*(range[t]['x'][1]-range[t]['x'][0])];
+        xAxisRange[0] = epochTimeConverter(xAxisRange[0], params[0]);
+        xAxisRange[1] = epochTimeConverter(xAxisRange[1], params[0]);
+        console.log('>>>>');
+        console.log(xAxisRange);
+        if (unixEpoch.indexOf(params[0]) == -1) {
+            x = d3.scale.linear()
+                  .domain(xAxisRange)
+                  .range([0, width]);
+        } else {
+            x = d3.time.scale().domain(xAxisRange)
+                  .range([0, width]);
+
+        }
     } else {
         x = d3.scale.ordinal()
               .domain(xNM.values)
