@@ -402,7 +402,7 @@ function create_selection(texts, values, prompt_text, multiple) {
 }
 function create_task_query() {
 	if (!task_cached) {
-		var qs = [];
+		var qs = ["db=", database, '&'];
 		for (task of tasks) 
 			qs.push("t=",encodeURIComponent(task),"&");	
 		if (qs.length > 0) 
