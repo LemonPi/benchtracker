@@ -70,10 +70,6 @@ get_custom_plot.addEventListener('click', function () {
                                    overlay_list.push(d3.select(this).attr('index'));
                                }
                              });
-    console.log('--- gmean_list ---');
-    console.log(gmean_list);
-    console.log('--- overlay_list ---');
-    console.log(overlay_list);
     plot_generator();} 
 );
 
@@ -102,6 +98,10 @@ function plotter_setup(data) {
     d3.select('#generate_plot').html('');
     d3.select('#generate_plot').text('Regenerate Plots');
     d3.select('#chart').html('');
+    // clear up
+    remove_inputs(formGmean);
+    remove_inputs(formOverlay);
+    document.getElementById('custom_panel').style.visibility = 'hidden';
     // convert x value to numerical
     indexXString();
     // check is x is run / parsed_date
@@ -497,6 +497,7 @@ function data_transform (series, overlay_list, mode) {
 
 function epochTimeConverter(unixEpochTime, paramX) {
     // deal with unix epoch time
+    var date = unixEpochTime;
     if (unixEpoch.indexOf(paramX) != -1) {
         var date = new Date(Number(unixEpochTime) * 1000);
         /*
@@ -508,10 +509,9 @@ function epochTimeConverter(unixEpochTime, paramX) {
         date = [date[2], date[0], date[1]];
         date = _.reduce(date, function(memo, num){return memo == '' ? num : memo+''+num;}, '');
         */
-        unixEpochTime = date;
     }
     //unixEpochTime = isNaN(Number(unixEpochTime)) ? unixEpochTime : Number(unixEpochTime);
-    return unixEpochTime;
+    return date;
 }
 
 /*
@@ -521,30 +521,23 @@ function epochTimeConverter(unixEpochTime, paramX) {
  */
 function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     //setup data
-    //range[t]['x'][0] = epochTimeConverter(range[t]['x'][0], params[0]);
-    //range[t]['x'][1] = epochTimeConverter(range[t]['x'][1], params[0]);
-
+    console.log('-- enter simple plot --');
+    console.log(range[t]['x']);
     var lineData = data_transform(series, overlay_list, 'overlay');
     var lineInfo = [];
     for (var k in lineData) {
         var lineVal = [];
         for (var j = 0; j < lineData[k].length; j ++ ){
-            //lineData[k][j][0] = epochTimeConverter(lineData[k][j][0], params[0]);
             if (isNaN(Number(lineData[k][j][0]))) {
                 lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             } else {
                 lineData[k][j][0] = Number(lineData[k][j][0]);
-                //lineData[k][j][0] = epochTimeConverter(lineData[k][j][0], params[0]);
                 lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             }
         }
-        //console.log('lineVal');
-        //console.log(lineVal);
         if (xNM.values.length == 0) {
             lineVal = _.sortBy(lineVal, 'x');
             lineVal = _.map(lineVal, function(d) {return {x: epochTimeConverter(d.x, params[0]), y: d.y}});
-            //console.log('sort lineVal');
-            //console.log(lineVal);
         } else {
             // sort by the order in xNM.values
             lineVal = _.map(lineVal, function(d) {return {x: xNM.values.indexOf(d.x), y: d.y};} );
@@ -575,10 +568,12 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     }
     if (xNM.values.length == 0) {
         var xAxisRange = [range[t]['x'][0] - 0.1*(range[t]['x'][1]-range[t]['x'][0]), range[t]['x'][1] + 0.1*(range[t]['x'][1]-range[t]['x'][0])];
-        xAxisRange[0] = epochTimeConverter(xAxisRange[0], params[0]);
-        xAxisRange[1] = epochTimeConverter(xAxisRange[1], params[0]);
-        console.log('>>>>');
-        console.log(xAxisRange);
+        //console.log('--- x axis range (before) ---');
+        //console.log(xAxisRange);
+        xAxisRange[0] = epochTimeConverter(Math.floor(xAxisRange[0]), params[0]);
+        xAxisRange[1] = epochTimeConverter(Math.ceil(xAxisRange[1]), params[0]);
+        //console.log('--- x axis range (after) ---');
+        //console.log(xAxisRange);
         if (unixEpoch.indexOf(params[0]) == -1) {
             x = d3.scale.linear()
                   .domain(xAxisRange)
@@ -586,7 +581,6 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         } else {
             x = d3.time.scale().domain(xAxisRange)
                   .range([0, width]);
-
         }
     } else {
         x = d3.scale.ordinal()
@@ -617,7 +611,6 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // ...............
     // assemble
     var chart = d3.select('#chart').append('div').attr('class', 'chart_container');
-    //var saveButton = chart.append('button').attr('type', 'button').attr('class', 'save_plot').text('save as png').on('click', savePlot);
     var svg = chart.append('svg').attr('class', 'canvas_container')
         .attr("width", width + plotMargin['left'] + plotMargin['right'])
         .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
