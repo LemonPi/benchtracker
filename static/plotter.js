@@ -15,6 +15,8 @@
 var timeParam = ['run', 'parsed_date'];
 var unixEpoch = ['parsed_date'];
 var defaultGmean = 'circuit';
+// the value for invalid y. these will be eliminated by the plotter
+var invalidY = -1;
 // create the actual plot in the display_canvas
 //
 var overlay_list = [];
@@ -518,6 +520,9 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     for (var k in lineData) {
         var lineVal = [];
         for (var j = 0; j < lineData[k].length; j ++ ){
+            if (lineData[k][j][1] == invalidY) {
+                continue;
+            }
             if (isNaN(Number(lineData[k][j][0]))) {
                 lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             } else {
