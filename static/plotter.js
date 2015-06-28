@@ -139,8 +139,9 @@ function defaultToGmeanTimePlot() {
         range[i]['x'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         range[i]['y'] = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         findAxisScale(seriesXY, xNameMap[i], i);
-
+        d3.select('#chart').append('div').attr('class', 'task_container').attr('id', 'task_'+i);
         simple_plot(raw_data.params, seriesXY, [], xNameMap[i], i, 'taskTitle');
+        sizingTaskContainer(1, 'task_'+i);
     }
 
 }
@@ -204,15 +205,19 @@ function defaultToGmeanSubPlot() {
             
             newOverlayList = [findMostExpensiveAxis(newRawData, newParams) + ''];
             var newData = data_transform(newRawData, newOverlayList, 'non-overlay');
-            var t = d3.select('#chart').append('h3').attr('class', 'task_title');
+            var c = d3.select('#chart').append('div').attr('class', 'task_container').attr('id', 'task_'+k);
+            var t = c.append('h3').attr('class', 'task_title');
             t.append('span').attr('class', 'h_grey').append('text').text('Task Name: ');
             t.append('span').attr('class', 'h_dark').append('text').text(raw_data.tasks[k]);
-            var s = d3.select('#chart').append('h4').attr('class', 'task_title');
+            var s = c.append('h4').attr('class', 'task_title');
             s.append('span').attr('class', 'h_grey').append('text').text('Geo Mean Axis: ');
             s.append('span').attr('class', 'h_dark').append('text').text(defaultGmean);
+            var count = 0;
             for (j in newData) {
                 simple_plot(newParams, newData[j], newOverlayList, xNameMap[k], k, 'normalTitle');
+                count += 1;
             }
+            sizingTaskContainer(count, 'task_'+k);
         }
     }
 }
@@ -257,7 +262,7 @@ function generate_overlay_selector() {
     // clear up
     remove_inputs(formGmean);
     remove_inputs(formOverlay);
-
+    d3.select('#chart').html('');
     var choice = raw_data.params;
 
     // choose gmean axis
@@ -425,10 +430,11 @@ function plot_generator() {
             findAxisScale(grouped_series[k], xNameMap[i], i);
         }
         // add task name
-        var t = d3.select('#chart').append('h3').attr('class', 'task_title');
+        var c = d3.select('#chart').append('div').attr('class', 'task_container').attr('id', 'task_'+i);
+        var t = c.append('h3').attr('class', 'task_title');
         t.append('span').attr('class', 'h_grey').text('Task Name: ');
         t.append('span').attr('class', 'h_dark').text(raw_data.tasks[i]);
-        var s = d3.select('#chart').append('h4').attr('class', 'task_title');
+        var s = c.append('h4').attr('class', 'task_title');
         s.append('span').attr('class', 'h_grey').text('Geo Mean Axes: ');
         var temp = _.map(gmean_list, function(d){return raw_data.params[Number(d)+2];}).join();
         if (temp == '') {
@@ -436,13 +442,21 @@ function plot_generator() {
         } else {
             s.append('span').attr('class', 'h_dark').text(temp);
         }
+        var count = 0;
         for (var k in grouped_series) {
             simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i, 'normalTitle');
+            count += 1;
         }
+        sizingTaskContainer(count, 'task_'+i);
     }
 
     // hide customization panel
     //custom_panel.style.visibility = 'hidden';
+}
+
+function sizingTaskContainer (numPlots, id) {
+    var level = Math.ceil(numPlots / 2);
+    d3.select('#'+id).style('height', level*plotSize['height'] + 180);
 }
 
 /*
@@ -602,11 +616,12 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
+        .ticks(10,'s')
         .tickSize(-height);
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left")
-        .ticks(5)
+        .ticks(10, 's')
         .tickSize(-width);
     // ...............
     // behavior
@@ -617,7 +632,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         .on("zoom", zoomed);
     // ...............
     // assemble
-    var chart = d3.select('#chart').append('div').attr('class', 'chart_container');
+    var chart = d3.select('#task_'+t).append('div').attr('class', 'chart_container');
     var svg = chart.append('svg').attr('class', 'canvas_container')
         .attr("width", width + plotMargin['left'] + plotMargin['right'])
         .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
