@@ -52,7 +52,8 @@ formOverlay = document.getElementById("overlay_select").getElementsByTagName("fi
 
 var get_custom_plot = document.getElementById("get_custom_plot");
 get_custom_plot.addEventListener('click', function () { gmean_list = [];
-    var checkbox = formGmean.getElementsByTagName('input');
+    //var checkbox = formGmean.getElementsByTagName('input');
+    var checkbox = d3.select('#gmean_select').selectAll('input');
     checkbox.each(function () {
                                if (d3.select(this).property('checked')) {
                                    gmean_list.push(d3.select(this).attr('index'));
@@ -60,7 +61,8 @@ get_custom_plot.addEventListener('click', function () { gmean_list = [];
                              });
 
     overlay_list = [];
-    var checkbox = formOverlay.getElementsByTagName('input');
+    //var checkbox = formOverlay.getElementsByTagName('input');
+    checkbox = d3.select('#overlay_select').selectAll('input');
     checkbox.each(function () {
                                if (d3.select(this).property('checked') 
                                 && gmean_list.indexOf(d3.select(this).attr('index')) == -1) {
