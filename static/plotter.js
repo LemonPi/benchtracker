@@ -51,7 +51,8 @@ formGmean = document.getElementById("gmean_select").getElementsByTagName("fields
 formOverlay = document.getElementById("overlay_select").getElementsByTagName("fieldset")[0];
 
 var get_custom_plot = document.getElementById("get_custom_plot");
-get_custom_plot.addEventListener('click', function () { gmean_list = [];
+get_custom_plot.addEventListener('click', function () { 
+    gmean_list = [];
     //var checkbox = formGmean.getElementsByTagName('input');
     var checkbox = d3.select('#gmean_select').selectAll('input');
     checkbox.each(function () {
@@ -69,6 +70,10 @@ get_custom_plot.addEventListener('click', function () { gmean_list = [];
                                    overlay_list.push(d3.select(this).attr('index'));
                                }
                              });
+    console.log('--- gmean_list ---');
+    console.log(gmean_list);
+    console.log('--- overlay_list ---');
+    console.log(overlay_list);
     plot_generator();} 
 );
 
@@ -238,7 +243,13 @@ function reduceToGmean(groupedX) {
  */
 function remove_inputs(parent) {
     var inputs = parent.getElementsByTagName('input');
-    while (inputs.length) inputs[0].parentNode.removeChild(inputs[0]);
+    var labels = parent.getElementsByTagName('label');
+    var br = parent.getElementsByTagName('br');
+    while (inputs.length) {
+        inputs[0].parentNode.removeChild(inputs[0]);
+        labels[0].parentNode.removeChild(labels[0]);
+        br[0].parentNode.removeChild(br[0]);
+    }
 }
 function generate_overlay_selector() {
     // clear up
@@ -254,7 +265,7 @@ function generate_overlay_selector() {
         input.type = 'checkbox';
         label.textContent = input.value = choice[i];
         label.htmlFor = input.id = 'gip-' + choice[i];
-        input.index = i - 2;
+        input.setAttribute('index', i - 2);
         input.addEventListener('change', function(){updateLegendCheckBox(this.id);});
         //var label = form.append('label').attr('class', 'param_label');
         formGmean.appendChild(input);
@@ -274,7 +285,6 @@ function generate_overlay_selector() {
         }
     }
     // choose overlay axis
-    // TODO: disable the selection by setting the attr value 'disabled' = 'on'
     for (var i = 2; i < choice.length; i ++ ) {
         //var label = form.append('label').attr('class', 'param_label');
         var input = document.createElement('input');
@@ -282,7 +292,7 @@ function generate_overlay_selector() {
         input.type = 'checkbox';
         label.textContent = input.value = choice[i];
         label.htmlFor = input.id = 'oip-' + choice[i];
-        input.index = i - 2;
+        input.setAttribute('index', i - 2);
         label.id = 'olabel-'+choice[i];
         //var label = form.append('label').attr('class', 'param_label');
         formOverlay.appendChild(input);
@@ -430,7 +440,7 @@ function plot_generator() {
     }
 
     // hide customization panel
-    custom_panel.style.visibility = 'hidden';
+    //custom_panel.style.visibility = 'hidden';
 }
 
 /*
@@ -528,13 +538,13 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                 lineVal.push({x: lineData[k][j][0], y: lineData[k][j][1]});
             }
         }
-        console.log('lineVal');
-        console.log(lineVal);
+        //console.log('lineVal');
+        //console.log(lineVal);
         if (xNM.values.length == 0) {
             lineVal = _.sortBy(lineVal, 'x');
             lineVal = _.map(lineVal, function(d) {return {x: epochTimeConverter(d.x, params[0]), y: d.y}});
-            console.log('sort lineVal');
-            console.log(lineVal);
+            //console.log('sort lineVal');
+            //console.log(lineVal);
         } else {
             // sort by the order in xNM.values
             lineVal = _.map(lineVal, function(d) {return {x: xNM.values.indexOf(d.x), y: d.y};} );
