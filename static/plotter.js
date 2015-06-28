@@ -823,7 +823,10 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
 function savePlot() {
 //var html = d3.select('svg').attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg').node().parentNode.innerHTML;
     //var pn = saveButton.node().parentNode;
+    var count = 0;
     d3.selectAll('.chart_container').each(function () {
+        console.log('-- count');
+        console.log(count);
         var html1 = d3.select(this).select('svg')
                      .attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg')
                      .node().parentNode.innerHTML;
@@ -850,13 +853,16 @@ function savePlot() {
         var image = new Image;
         image.src = imgsrc;
         image.onload = function() {
+            count += 1;
             context.drawImage(image, 0, 0);
             var canvasdata = canvas.toDataURL('image/png');
             var pngimg = '<img src="'+canvasdata+'">';
             var a = document.createElement('a');
-            a.download = 'sample.png';
+            a.download = 'plot'+count+'.png';
             a.href = canvasdata;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
 
         d3.select('#temp').html('');
