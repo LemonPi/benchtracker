@@ -1,14 +1,15 @@
 // TODO:
 // 1. auto-resizing graph, change the axis range
 // 2. set axis range, set title
-// 3. gmean
 // 4. show coordinate
-// 5. save graph
 // 6. fix the offline plotter
 
-// 7. getBBox() is inconsistent among console log value and the final output value
-// 8. also inconsistent between chrome and firefox
-// 9. probably should calculate bound box after web is fully loaded
+// Error msg:
+var maxPlotsAllowed = 20;
+errMsg = {ENUMPLOTS: 'More than'+maxPlotsAllowed+' will be generated.\n'
+                     +'Please consider adding filters or geometric mean / legend to '
+                     +'reduce the number of plots!\n'
+                     +'Current plotting aborted' };
 
 // Some const
 // if x axis is an element of timeParam, then the default behavior is to gmean everything
@@ -213,9 +214,16 @@ function defaultToGmeanSubPlot() {
             s.append('span').attr('class', 'h_grey').append('text').text('Geo Mean Axis: ');
             s.append('span').attr('class', 'h_dark').append('text').text(defaultGmean);
             var count = 0;
-            for (j in newData) {
-                simple_plot(newParams, newData[j], newOverlayList, xNameMap[k], k, 'normalTitle');
+            for (var j in newData) {
                 count += 1;
+            }
+            if (count <= maxPlotsAllowed) {
+                for (var j in newData) {
+                    simple_plot(newParams, newData[j], newOverlayList, xNameMap[k], k, 'normalTitle');
+                }
+            } else {
+                count = 0;
+                alert(errMsg['ENUMPLOTS']);
             }
             sizingTaskContainer(count, 'task_'+k);
         }
@@ -444,8 +452,15 @@ function plot_generator() {
         }
         var count = 0;
         for (var k in grouped_series) {
-            simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i, 'normalTitle');
             count += 1;
+        }
+        if (count <= maxPlotsAllowed) {
+            for (var k in grouped_series) {
+                simple_plot(raw_data.params, grouped_series[k], overlay_list, xNameMap[i], i, 'normalTitle');
+            }
+        } else {
+            count = 0;
+            alert(errMsg['ENUMPLOTS']);
         }
         sizingTaskContainer(count, 'task_'+i);
     }
@@ -522,17 +537,24 @@ function epochTimeConverter(unixEpochTime, paramXY) {
     }
     return date;
 }
-
 /*
- * generate the real plot
- * using d3.js
- * t: task index
+ * setup data for plotter:
+ *      1. convert to data structure representing series
+ *      2. dealing with some corner case of range
  */
-function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
+function prepareData(params, series, overlay_list, xNM, t) {
     //setup data
     if (range[t]['y'][0] == Number.NEGATIVE_INFINITY) {
         range[t]['y'][0] = 0;
         range[t]['y'][1] = 0;
+    }
+    if (range[t]['x'][0] == range[t]['x'][1]) {
+        range[t]['x'][0] -= 0.5*range[t]['x'][0];
+        range[t]['x'][1] += 0.5*range[t]['x'][1];
+    }
+    if (range[t]['y'][0] == range[t]['y'][1]) {
+        range[t]['y'][0] -= 0.5*range[t]['y'][0];
+        range[t]['y'][1] += 0.5*range[t]['y'][1];
     }
     var lineData = data_transform(series, overlay_list, 'overlay');
     console.log('///// lineData /////');
@@ -541,6 +563,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     for (var k in lineData) {
         var lineVal = [];
         for (var j = 0; j < lineData[k].length; j ++ ){
+            // ignore invalid data points
             if (lineData[k][j][1] == invalidY) {
                 continue;
             }
@@ -571,21 +594,16 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     lineInfo = _.sortBy(lineInfo, 'key');
     console.log('-=-=-=-=-= lineInfo =-=-=-=-=-=-');
     console.log(lineInfo);
-    // plot
-    // width & heigth is the size of the actual plotting area
-    var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
-    var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
-    // ..............
+    return lineInfo;
+}
+/*
+ * setup axis for simple_plot
+ *      dealing with different axis types: numerical, non-numerical, time
+ *      y axis is always numerical
+ */
+function setupAxis(params, xNM, t, width, height) {
     // setup axis
     var x = null;
-    if (range[t]['x'][0] == range[t]['x'][1]) {
-        range[t]['x'][0] -= 0.5*range[t]['x'][0];
-        range[t]['x'][1] += 0.5*range[t]['x'][1];
-    }
-    if (range[t]['y'][0] == range[t]['y'][1]) {
-        range[t]['y'][0] -= 0.5*range[t]['y'][0];
-        range[t]['y'][1] += 0.5*range[t]['y'][1];
-    }
     if (xNM.values.length == 0) {
         var xAxisRange = [range[t]['x'][0] - 0.1*(range[t]['x'][1]-range[t]['x'][0]), range[t]['x'][1] + 0.1*(range[t]['x'][1]-range[t]['x'][0])];
         //console.log('--- x axis range (before) ---');
@@ -593,7 +611,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         xAxisRange[0] = epochTimeConverter(xAxisRange[0], params[0]);
         xAxisRange[1] = epochTimeConverter(xAxisRange[1], params[0]);
         //console.log('--- x axis range (after) ---');
-        //console.log(xAxisRange);
+        //console.log(epochTimeConverter(xAxisRange[0], params[0]));
         if (unixEpoch.indexOf(params[0]) == -1) {
             x = d3.scale.linear()
                   .domain(xAxisRange)
@@ -619,11 +637,56 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         y = d3.time.scale().domain(yAxisRange)
               .range([height, 0]);
     }
-
+    return [x, y];
+}
+/*
+ * generate the svg plot
+ * using d3.js
+ * t: task index
+ * element layout:
+ *      task_container
+ *          |
+ *          `-- task_title
+ *          |
+ *          `-- chart_container
+ *                  |
+ *                  `-- svg
+ *                  |    |
+ *                  |    `-- g
+ *                  |        |
+ *                  |        `-- rect, axis, path
+ *                  |
+ *                  `--legend_container
+ *                          |
+ *                          `-- svg
+ *                               |
+ *                               `-- legend_title, legend
+ *
+ */
+function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
+    // const for plot canvas
+    // width & heigth is the size of the actual plotting area
+    var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
+    var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
+    var plotTitleY = -10;
+    // const for legend
+    var dataDotRadius = 4;
+    var legendSize = 14;
+    var legendMargin = 8;
+    var legendPeriGap = 10;
+    // ..............
+    // data
+    var lineInfo = prepareData(params, series, overlay_list, xNM, t);
+    // ..............
+    // axis
+    var xy = setupAxis(params, xNM, t, width, height);
+    var x = xy[0];
+    var y = xy[1];
+    // 's' is for SI prefix in axis ticks
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
-        .ticks(10,'s')
+        .ticks(10, 's')
         .tickSize(-height);
     var yAxis = d3.svg.axis()
         .scale(y)
@@ -638,18 +701,20 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         .scaleExtent([1, 10])
         .on("zoom", zoomed);
     // ...............
-    // assemble
+    // assembly
     var chart = d3.select('#task_'+t).append('div').attr('class', 'chart_container');
     var svg = chart.append('svg').attr('class', 'canvas_container')
-        .attr("width", width + plotMargin['left'] + plotMargin['right'])
-        .attr("height", height + plotMargin['top'] + plotMargin['bottom'])
+        .style("width", plotSize['width'])
+        .style("height", plotSize['height'])
         .attr('shape-rendering', 'geometricPrecision')
       .append("g")
         .attr("transform", "translate(" + plotMargin['left'] + "," + plotMargin['top'] + ")")
+    // only support zooming for numerical x axis
     if (xNM.values.length == 0) {
         svg.call(zoom);
     }
-    var canvas = svg.append("rect")
+    // svg -> g -> rect: background color
+    svg.append("rect")
         //.attr('class', 'canvas_peripheral')
         .attr('fill', '#f0f0f0')
         .attr("width", width)
@@ -658,12 +723,12 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
-    // reassemble x and y axis name, to eliminate underscore
-    var xParam = _.reduce(params[0].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
-    var yParam = _.reduce(params[1].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis);
+    // reassemble x and y axis name, to eliminate underscore
+    var xParam = _.reduce(params[0].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
+    var yParam = _.reduce(params[1].split('_'), function(memo, num) {return memo == '' ? num : memo+' '+num;}, '');
     svg.append('text').attr('class', 'x label').attr('text-anchor', 'middle')
        .attr('x', width/2).attr('y', height+30).style('font-size','14px')
        .text(xParam);
@@ -692,7 +757,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
             .enter()
             .append('circle')
             .attr('class', 'dots')
-            .attr('r', 4)
+            .attr('r', dataDotRadius)
             .attr('fill', function() {return color(lineInfo[i]['key']);})
             .attr('transform', function(d) {return 'translate(' + x(d['x'])+ ',' + y(d['y']) + ')'; });
     }
@@ -710,13 +775,12 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // .............
     // add legend
     // the svg size should be chosen to fit the text
-    d3.selectAll('svg').style('font','10px sans-serif');
-    var svgWidth = 0;
-    var svgHeight = 0;
-    var svgLegend = chart.append('div').attr('class', 'legend_container').append('svg').attr('class', 'legend_svg'); //.attr('width', 130).attr('height', 500);
+    var svgLegWidth = 0;
+    var svgLegHeight = 0;
+    var svgLegend = chart.append('div').attr('class', 'legend_container').append('svg').attr('class', 'legend_svg');
+    // NOTE: has to set font here, or getBBox will return inprecise value due to the unloaded font
+    d3.selectAll('svg').style('font', '10px sans-serif');
     if (lineInfo.length > 1 || lineInfo[0]['key'] != '') {
-        var legendSize = 14;
-        var legendMargin = 8;
         var legend = svgLegend.selectAll('.legend')
                         .data(color.domain())   // this step is the key to legend
                         .enter()
@@ -724,9 +788,8 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                         .attr('class', 'legend')
                         .attr('transform', function (d, i) {
                                                var height = legendSize + legendMargin;
-                                               //var offset = height * color.domain().length / 2;
-                                               var horz = 10; //width + 10;
-                                               var vert = (i+1) * height + 80;
+                                               var horz = legendPeriGap;
+                                               var vert = (i+1) * height + plotMargin['top'] + legendPeriGap;
                                                return 'translate(' + horz + ', ' + vert + ')';
                                            });
         var legendTitle = _.map(overlay_list, function(d) {return '<'+params[Number(d)+2]+'>';});
@@ -734,12 +797,12 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
             legendTitle[i] = _.reduce(legendTitle[i].split('_'), function(memo, num){return memo == '' ? num : memo+' '+num;}, '');
         }
     
-        var textElement = svgLegend.append('text').attr('x', 10).attr('y', 80)
+        var textElement = svgLegend.append('text').attr('x', legendPeriGap).attr('y', legendPeriGap + plotMargin['top'])
            .attr('text-anchor', 'left').style('font-size', '12px')
            .style('font-weight', 'bold').text(String(legendTitle));
-           
-        svgWidth = (svgWidth > textElement.node().getBBox().width) ? svgWidth : textElement.node().getBBox().width;
-        svgHeight += textElement.node().getBBox().height;
+        // dynamically adjust the svg legend size 
+        svgLegWidth = (svgLegWidth > textElement.node().getBBox().width) ? svgLegWidth : textElement.node().getBBox().width;
+        svgLegHeight += textElement.node().getBBox().height;
 
         legend.append('rect')
               .attr('width', legendSize).attr('height', legendSize)
@@ -750,17 +813,20 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
               .style('font-size', '12px')
               .text(function(d) {return d;});
         legend.each(function() {
-                        svgWidth = (svgWidth > this.getBBox().width) ? svgWidth : this.getBBox().width;
-                        svgHeight += legendSize+legendMargin; });
-        svgLegend.attr('width', svgWidth+10).attr('height', svgHeight+80+legendSize);
+                        svgLegWidth = (svgLegWidth > this.getBBox().width) ? svgLegWidth : this.getBBox().width;
+                        svgLegHeight += legendSize+legendMargin; });
+        svgLegWidth += legendPeriGap;
+        svgLegHeight += legendPeriGap + plotMargin['top'] + legendSize;
+        svgLegend.attr('width', svgLegWidth).attr('height', svgLegHeight);
     } else {
+        // no legend at all
         svgLegend.attr('width', 0).attr('height', 0);
     }
     // .............
     // add title
     var cTitle = svg.append("text")
                     .attr("x", width/2)
-                    .attr("y", -10)
+                    .attr("y", plotTitleY)
                     .attr("text-anchor", "middle")
                     .attr("class", "chart-title")
                     .style("font-size", "16px");
@@ -781,21 +847,19 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
         }
     }
     // dealing with styling
-    var canvas = svg.append("rect")
+    // have to append this rect after the plots, in order for the peripheral stroke 
+    // being placed at the very front
+    svg.append("rect")
         .attr('class', 'canvas_peripheral')
         .attr('fill', 'none')
         .attr("width", width)
         .attr("height", height);
-
-
     d3.selectAll('rect.canvas_peripheral').style('stroke', '#000');
     d3.selectAll('path').style('fill', 'none');
     d3.selectAll('path.domain').style('stroke', '#fff');
     d3.selectAll('.axis line').style('stroke', '#fff').style('fill', 'none');
     d3.selectAll('.axis path').style('stroke', '#fff').style('fill', 'none');
     d3.selectAll('.line').style('fill', 'none').style('stroke-width','1.5px');
-    //d3.select('body').append('div').html('<img src="'+img+'"/>');
-    //document.write('<img src="'+img+'"/>');
     // ..............
     // interaction
     function zoomed() {
@@ -828,8 +892,6 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
 // ..............
 // save image
 function savePlot() {
-//var html = d3.select('svg').attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg').node().parentNode.innerHTML;
-    //var pn = saveButton.node().parentNode;
     var count = 0;
     // var all is for compatibility of firefox. FF won't load img correctly unless you call onload function
     // so I have to put zip.file() inside onload function
