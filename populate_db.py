@@ -21,17 +21,19 @@ type_map = {int: "INT", float: "REAL", str: "TEXT"}
 def main():
     params = Params()
     parse_args(params)
-    if (params.clean):
-        drop_table(params)
 
     # operate on database
     db = sqlite3.connect(params.database)
     db.row_factory = sqlite3.Row
 
     while params.task_dir:
-        verify_paths(params)
-        initialize_tracked_columns(params, db)
-        update_db(params, db)
+        if (params.clean):
+            drop_table(params, db)
+        else:
+            verify_paths(params)
+            initialize_tracked_columns(params, db)
+            update_db(params, db)
+
         load_next_task(params)
 
     db.close()
@@ -55,12 +57,16 @@ def update_db(params, db):
         cursor.execute("SELECT MAX({}), MAX({}) FROM {}".format("parsed_date", "run", params.task_table_name))
         row = cursor.fetchone()
         if row[0]:
-            last_parsed_date = row[0]
+            # storing in database truncates decimal, so add 1 second
+            last_parsed_date = row[0] + 1
             last_run = row[1]
-            print("last parsed date", last_pared_date)
+            print("last parsed date", last_parsed_date)
             print("last run", last_run)
             params.last_parsed_date = last_parsed_date
             params.last_run = last_run
+        else:
+            print("first population")
+            params.last_run = 0
         # else first run, nothing in table yet
 
     def add_run_to_db(params, run):
@@ -69,14 +75,14 @@ def update_db(params, db):
         try:
             parsed_date = os.path.getmtime(resfilename)
             # throw away unless newer than latest or run number greater than maximum
-            if (parsed_date < params.last_parsed_date && run_number <= params.last_run):
+            if parsed_date <= params.last_parsed_date and run_number <= params.last_run:
                 return
         except OSError:
             print("file {} not found; skipping".format(resfilename))
             return
 
         params.last_run += 1
-        print("run {} added".format(params.last_run))
+        print("run {} added ({}) ({})".format(run_number, params.last_run, parsed_date))
 
         with open(resfilename, 'r') as res:
             # make sure table is compatible with run data by inserting any new columns
@@ -135,13 +141,9 @@ def update_db(params, db):
     db.commit()
         
 
-def drop_table(params):
-    db = sqlite3.connect(params.database)
+def drop_table(params, db):
     cursor = db.cursor()
     cursor.execute("DROP TABLE IF EXISTS {}".format(params.task_table_name))
-    db.commit()
-    db.close()
-    sys.exit(0)
 
 def create_table(params, db, task_table_name):
     # creates table schema based on the result file of run 1
@@ -202,8 +204,8 @@ def initialize_tracked_columns(params, db):
     for info in column_info:
         column_names.add('\"' + info[1] + '\"')
     setattr(params, 'tracked_columns', column_names)
-    print('tracked params: ', end='')
-    print(params.tracked_columns)
+    # print('tracked params: ', end='')
+    # print(params.tracked_columns)
 
 
 
