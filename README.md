@@ -22,7 +22,7 @@ scripts$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch 
  2. `-k arch circuit` key parameters that uniquely define a VTR benchmark
  
 VTR has its own `run_task` and `parse_task` scripts, so it enters benchtracker at the `populate_db` stage.
-`checkin_reg` is the name of the task to task, and it exists as a folder shown below:
+`checkin_reg` is the name of the task to sweep benchmarks over, and it exists as a folder shown below:
 ```
 vtr_flow
     tasks
@@ -82,12 +82,15 @@ For some common command line options,
 bash$ ~/benchtracker/server_db.py --root_directory ./ --database testing.db --port 8080
 ```
  - `--root_directory` tells the server where to find its databases (multiple databases can be served by the same server)
-Commandline options and their default values can be found by running `server_db` with `-h`.
+ - `--database` gives the default database to serve if none are specified by the viewer; here it would be `./testing.db`
+ - `--port` specifies the port to listen for requests on; be wary of firewall rules on your system
+ 
+More options and their default values can be found by running `server_db` with `-h`.
 
 ### Production serving
-The server is configured in debug mode by default, and can be changed to release mode by
-changing `server_db.py`'s last line to `app.run(host='0.0.0.0', port=port)`.
-The server is then found under the IP address of your machine.
+The server is configured to serve in production by default, with it's URL being the IP address of your machine
+and the port to listen on. It can be put into debug mode by
+changing `server_db.py`'s last line to `app.run(debug=True, port=port)`.
 
 ### Specifying database
 The syntax for specifying database is the same for `populate_db` and `server_db`:
@@ -95,9 +98,10 @@ The syntax for specifying database is the same for `populate_db` and `server_db`
 bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit <b>-d ~/benchdata/testing.db</b>
 bash$ ~/benchtracker/server_db.py <b>-d ~/benchdata/testing.db</b>
 </pre>
+For `populate_db` this is the database to put data in while for `server_db` this is the default database to host if none are specified.
 
 ## Viewing database
-Assuming `server_db` is running on port 5000 and has a valid database, the viewer can be 
+While `server_db` is running, assuming on port 5000 and has a valid database, the viewer can be 
 reached at 
 ```
 http://localhost:5000/view
@@ -114,8 +118,16 @@ The minimum selection for a full query is 1 task, x parameter, and y parameter s
 with the output options on the dividing row available:
 ![output_options](photos/divider_options.png)
 
-The data can be visualized by generating interactive plots, or downloaded as csv files.
-The current selection is saved in query string format by the third button.
+
+## Retrieving data
+The viewer under `/view` allows you to select a portion of the stored data for further processing.
+The current selection can be saved and shared by clicking `Get query string`, which is shared by all processing options.
+The processing options include:
+ - Generating plots inside `/view?[query_string]` for visualization
+ - Saving plots as SVG and PNG after generating them by clicking `Save plots (png and svg)`
+ - Downloading raw data in CSV format under `/csv?[query_string]`
+ - Downloading raw data in JSON format under `/data?[query_string]`
+
 
 ## Plot
 The plotter is designed to support basic and advanvced usage. 
@@ -332,9 +344,3 @@ Each item on every line should end in a tab. This includes the last element.
 The first line is the header with all the parameter names.
 N lines follow, where N=number of benchmarks for that task. 
 On each line is the value of each parameter for that benchmark.
-
-
-<a name="public_hosting"> </a>
-# Public Hosting Instructions
-At the bottom of `server_db.py`, change the call of the run() method to:
-`app.run(host='0.0.0.0')` for the server to be visible via your machine's public IP.
