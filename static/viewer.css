@@ -165,6 +165,14 @@ select:focus {
 	overflow:hidden;
 	flex:1 0;
 }
+#get_custom_plot {
+	flex:0.5;
+	cursor:pointer;
+	margin:9px 0 16px 2px;
+	border:2px solid grey;
+	background: transparent;
+	font-size:large;
+}
 #gmean_select {
 }
 #overlay_select {
