@@ -469,8 +469,11 @@ function findAxisScale(series, xNM, t) {
             range[t]['x'][0] = (range[t]['x'][0] > Number(series[i][0])) ? Number(series[i][0]) : range[t]['x'][0];
             range[t]['x'][1] = (range[t]['x'][1] < Number(series[i][0])) ? Number(series[i][0]) : range[t]['x'][1];
         }
-        range[t]['y'][0] = (range[t]['y'][0] > Number(series[i][1])) ? Number(series[i][1]) : range[t]['y'][0];
-        range[t]['y'][1] = (range[t]['y'][1] < Number(series[i][1])) ? Number(series[i][1]) : range[t]['y'][1];
+        if (Number(series[i][1]) != invalidY) {
+            range[t]['y'][0] = (range[t]['y'][0] > Number(series[i][1])) ? Number(series[i][1]) : range[t]['y'][0];
+            range[t]['y'][1] = (range[t]['y'][1] < Number(series[i][1])) ? Number(series[i][1]) : range[t]['y'][1];
+
+        }
     }
 }
 /*
@@ -527,6 +530,10 @@ function epochTimeConverter(unixEpochTime, paramXY) {
  */
 function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     //setup data
+    if (range[t]['y'][0] == Number.NEGATIVE_INFINITY) {
+        range[t]['y'][0] = 0;
+        range[t]['y'][1] = 0;
+    }
     var lineData = data_transform(series, overlay_list, 'overlay');
     console.log('///// lineData /////');
     console.log(lineData);
@@ -824,9 +831,13 @@ function savePlot() {
 //var html = d3.select('svg').attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg').node().parentNode.innerHTML;
     //var pn = saveButton.node().parentNode;
     var count = 0;
+    // var all is for compatibility of firefox. FF won't load img correctly unless you call onload function
+    // so I have to put zip.file() inside onload function
+    var all = 0;
+    d3.selectAll('.chart_container').each(function () {all += 1;});
+    var zipPng = new JSZip();
+    var zipSvg = new JSZip();
     d3.selectAll('.chart_container').each(function () {
-        console.log('-- count');
-        console.log(count);
         var html1 = d3.select(this).select('svg')
                      .attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg')
                      .node().parentNode.innerHTML;
@@ -836,15 +847,17 @@ function savePlot() {
         var html = html2 + html1;
         var svgWidth = plotSize['width'] + Number(d3.select(this).select('.legend_svg').attr('width'));
         var svgHeight =plotSize['height'] > Number(d3.select(this).select('.legend_svg').attr('height')) ? plotSize['height'] : Number(d3.select(this).select('.legend_svg').attr('height'));
-        console.log('svg height');
-        console.log(svgHeight);
-        console.log('svg width');
-        console.log(svgWidth);
         d3.select('#temp').append('svg').attr('width', svgWidth).attr('height', svgHeight)
           .attr('version',1.1).attr('xmlns', 'http://www.w3.org/2000/svg').html(html);
         d3.select('#temp').select('.legend_svg').attr('x', plotSize['width']);
+        var tempEle = document.getElementById('temp');
+        var tempSvg = tempEle.getElementsByTagName('svg')[0];
+        var rmDiv = tempSvg.getElementsByClassName('legend_container')[0];
+        tempSvg.removeChild(rmDiv);
         html = d3.select('#temp').node().innerHTML;
         var imgsrc = 'data:image/svg+xml;base64,'+btoa(html);
+        console.log('/// imgsrc ///');
+        console.log(imgsrc);
         //var img = '<img src="'+imgsrc+'"/>';
         //d3.select('body').append('div').attr('id', 'test-svg-conversion').html(img);
         d3.select('#temp').append('canvas').attr('width', svgWidth).attr('height', svgHeight);
@@ -852,19 +865,29 @@ function savePlot() {
         var context = canvas.getContext('2d');
         var image = new Image;
         image.src = imgsrc;
+        
         image.onload = function() {
             count += 1;
             context.drawImage(image, 0, 0);
             var canvasdata = canvas.toDataURL('image/png');
-            var pngimg = '<img src="'+canvasdata+'">';
+            /*
+            // this is an alternative option for saving img
             var a = document.createElement('a');
             a.download = 'plot'+count+'.png';
             a.href = canvasdata;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            */
+            zipPng.file('plotPng-'+count+'.png', canvasdata.substr(canvasdata.indexOf(',')+1), {base64: true});
+            zipSvg.file('plotSvg-'+count+'.svg', btoa(html), {base64: true});
+            if (count == all) {
+                var contentPng = zipPng.generate({type: 'blob'});
+                var contentSvg = zipSvg.generate({type: 'blob'});
+                saveAs(contentPng, 'plots-png.zip');
+                saveAs(contentSvg, 'plots-svg.zip');
+            }
         }
-
         d3.select('#temp').html('');
     });
 }
