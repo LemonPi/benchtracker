@@ -668,6 +668,7 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // width & heigth is the size of the actual plotting area
     var width = plotSize['width'] - plotMargin['left'] - plotMargin['right'];
     var height = plotSize['height'] - plotMargin['top'] - plotMargin['bottom'];
+    var origLegWidth = 130;
     var plotTitleY = -10;
     // const for legend
     var dataDotRadius = 4;
@@ -677,6 +678,9 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // ..............
     // data
     var lineInfo = prepareData(params, series, overlay_list, xNM, t);
+    var ratio = 530 / (530 + 130);
+    var plotWidth = document.getElementById('display_canvas').offsetWidth * ratio / 2;
+    width = width * (plotWidth / plotSize['width']);
     // ..............
     // axis
     var xy = setupAxis(params, xNM, t, width, height);
@@ -704,11 +708,18 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // assembly
     var chart = d3.select('#task_'+t).append('div').attr('class', 'chart_container');
     var svg = chart.append('svg').attr('class', 'canvas_container')
-        .style("width", plotSize['width'])
+        .style("width", plotWidth) //plotSize['width']
         .style("height", plotSize['height'])
-        .attr('shape-rendering', 'geometricPrecision')
-      .append("g")
-        .attr("transform", "translate(" + plotMargin['left'] + "," + plotMargin['top'] + ")")
+        .attr('shape-rendering', 'geometricPrecision');
+    // get the adjusted width of the outer svg
+    //width = svg.node().width.animVal.value;
+    //console.log('--- width ---');
+    //console.log(svg.node().width.animVal);
+    var gTransX = plotWidth * (plotMargin['left'] / plotSize['width']);
+    var gTransY = plotMargin['top']; 
+    svg = svg.append("g")
+             .attr('transform', 'translate(' + gTransX + ',' + gTransY + ')');
+             //.attr("transform", "translate(" + plotMargin['left'] + "," + plotMargin['top'] + ")")
     // only support zooming for numerical x axis
     if (xNM.values.length == 0) {
         svg.call(zoom);
@@ -777,7 +788,8 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
     // the svg size should be chosen to fit the text
     var svgLegWidth = 0;
     var svgLegHeight = 0;
-    var svgLegend = chart.append('div').attr('class', 'legend_container').append('svg').attr('class', 'legend_svg');
+    var divWidth = origLegWidth * (plotWidth / plotSize['width']);
+    var svgLegend = chart.append('div').attr('class', 'legend_container').style('width', divWidth).append('svg').attr('class', 'legend_svg');
     // NOTE: has to set font here, or getBBox will return inprecise value due to the unloaded font
     d3.selectAll('svg').style('font', '10px sans-serif');
     if (lineInfo.length > 1 || lineInfo[0]['key'] != '') {
@@ -907,11 +919,12 @@ function savePlot() {
                      .attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg')
                      .node().parentNode.innerHTML;
         var html = html2 + html1;
-        var svgWidth = plotSize['width'] + Number(d3.select(this).select('.legend_svg').attr('width'));
+        var plotWidth = d3.select(this).select('svg').node().width.animVal.value;
+        var svgWidth = plotWidth + Number(d3.select(this).select('.legend_svg').attr('width'));
         var svgHeight =plotSize['height'] > Number(d3.select(this).select('.legend_svg').attr('height')) ? plotSize['height'] : Number(d3.select(this).select('.legend_svg').attr('height'));
         d3.select('#temp').append('svg').attr('width', svgWidth).attr('height', svgHeight)
           .attr('version',1.1).attr('xmlns', 'http://www.w3.org/2000/svg').html(html);
-        d3.select('#temp').select('.legend_svg').attr('x', plotSize['width']);
+        d3.select('#temp').select('.legend_svg').attr('x', plotWidth);
         var tempEle = document.getElementById('temp');
         var tempSvg = tempEle.getElementsByTagName('svg')[0];
         var rmDiv = tempSvg.getElementsByClassName('legend_container')[0];
