@@ -48,17 +48,19 @@ def update_db(params, db):
     # check if table for task exists; if not then create it
     task_table_name = params.task_table_name
     create_table(params, db, task_table_name)
-    # verify that the max runs in the task_dir is >= to the max runs in the database
-    def check_runs_match_table(runs):
+    # load up latest run and parsed date for task
+    def check_last_runs_table(runs):
         natural_sort(runs)
-        highest_run = get_trailing_num(runs[-1])
         cursor = db.cursor()
-        cursor.execute("SELECT MAX({}) FROM {}".format(params.run_prefix, params.task_table_name))
+        cursor.execute("SELECT MAX({}), MAX({}) FROM {}".format("parsed_date", "run", params.task_table_name))
         row = cursor.fetchone()
         if row[0]:
-            if highest_run < row[0]:
-                print("stored run ({}) is higher than existing run ({}); \
-consider running with --clean to remake task table".format(row[0], highest_run))
+            last_parsed_date = row[0]
+            last_run = row[1]
+            print("last parsed date", last_pared_date)
+            print("last run", last_run)
+            params.last_parsed_date = last_parsed_date
+            params.last_run = last_run
         # else first run, nothing in table yet
 
     def add_run_to_db(params, run):
@@ -66,10 +68,15 @@ consider running with --clean to remake task table".format(row[0], highest_run))
         run_number = get_trailing_num(run)
         try:
             parsed_date = os.path.getmtime(resfilename)
+            # throw away unless newer than latest or run number greater than maximum
+            if (parsed_date < params.last_parsed_date && run_number <= params.last_run):
+                return
         except OSError:
             print("file {} not found; skipping".format(resfilename))
             return
 
+        params.last_run += 1
+        print("run {} added".format(params.last_run))
 
         with open(resfilename, 'r') as res:
             # make sure table is compatible with run data by inserting any new columns
@@ -95,7 +102,7 @@ consider running with --clean to remake task table".format(row[0], highest_run))
             rows_to_add = []
             for line in res:
                 # run number and parsed_date are always recorded
-                result_params_val = [run_number, parsed_date]
+                result_params_val = [params.last_run, parsed_date]
                 result_params_val.extend(line.split('\t'))
                 if result_params_val[-1] == '\n':
                     result_params_val.pop()
@@ -104,6 +111,7 @@ consider running with --clean to remake task table".format(row[0], highest_run))
                     print("There are {} values for only {} parameters in run {}; \
                         skipping run".format(len(result_params_val), len(result_params), run_number))
                     # skip this run
+                    params.last_run -= 1
                     return
 
                 # for when the last column value is the empty string
@@ -123,7 +131,7 @@ consider running with --clean to remake task table".format(row[0], highest_run))
 
 
 
-    walk_runs(params, add_run_to_db, check_runs_match_table)
+    walk_runs(params, add_run_to_db, check_last_runs_table)
     db.commit()
         
 
@@ -251,7 +259,9 @@ def parse_args(ns=None):
             help="the combination of key parameters that defines a unique benchmark;")
     params = parser.parse_args(namespace=ns)
     params.database = os.path.expanduser(params.database)
-
+    # initialize to -1 as everything valid must be greater than -1
+    setattr(params, 'last_parsed_date', -1)
+    setattr(params, 'last_run', -1)
     # if a task list is given (where each line is the path to a task)
     if params.root_directory:
         if params.root_directory[-1] != '/':
@@ -265,8 +275,6 @@ def parse_args(ns=None):
             for line in tl:
                 task_list.append(params.root_directory + line.rstrip())
             params.task_list = task_list
-
-    # print(params.task_list)
 
     # load first task
     load_next_task(params)

@@ -15,9 +15,12 @@ var filter_method_map = {"range":"BETWEEN", "categorical":"IN"};
 jQuery.ajaxSettings.traditional = true; 
 
 
+document.addEventListener('DOMContentLoaded', function() {console.log("ready");}, false);
+// report_debug("READY");
 
 // DOM modifying functions
 $(document).ready(function() {
+
 
 // update all other selection boxes if necessary when tasks are changed
 var task_select = document.getElementById("task_select").getElementsByClassName('task');
@@ -94,14 +97,20 @@ function populate_param_windows() {
 		}, false);
 		x_param.appendChild(val);
 	}
-	if (x_sel && (typeof x_sel === "string")) {
-		var x = x_param.querySelector(["a[title='", x_sel, "']"].join(""));
+	if (x_sel) {
+		var x;
+		if (typeof x_sel === "string") x = x_param.querySelector(["a[title='", x_sel, "']"].join(""));
+		else x = x_param.querySelector(["a[title='", x_sel.title, "']"].join(""));
 		if (x) toggle_x(x);
+		else x_sel = undefined;
 	} 
-	if (y_sel && (typeof y_sel === "string")) {
-		var y = y_param.querySelector(["a[title='", y_sel, "']"].join(""));
+	if (y_sel) {
+		var y;
+		if (typeof y_sel === "string") y = y_param.querySelector(["a[title='", y_sel, "']"].join(""));
+		else y = y_param.querySelector(["a[title='", y_sel.title, "']"].join(""));
 		if (y) toggle_y(y);
-	} 	
+		else y_sel = undefined;
+	} 
 	report_debug("populated param windows");
 }
 
@@ -169,7 +178,12 @@ function download_csv() {
 function copy_data_query() {
 	var data_query = create_data_query();
 	if (data_query) {
-		window.prompt("Copy with Ctrl+c, Enter", data_query);
+		window.prompt(["Copy with Ctrl+c, Enter\n\
+Prefix with:  ",root_url,
+"\nand one of:\n\
+view? - to see the same selection in the viewer\n\
+csv? - to download the raw data in csv format\n\
+data? - to download the raw data in JSON format"].join(""), data_query);
 	}
 }
 

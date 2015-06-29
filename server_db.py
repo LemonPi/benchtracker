@@ -273,4 +273,4 @@ def parse_data():
 
 if __name__ == '__main__':
     parse_args()
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=port)
