@@ -1,7 +1,9 @@
+// "use strict";
 // globals
 var root_url = 'http://' + window.location.href.split('/')[2];
 var tasks = new Set();
-var x_sel = y_sel = "";
+var x_sel = "";
+var y_sel = "";
 var task_cached = "";
 var params = [];
 var labels = [];
@@ -70,8 +72,8 @@ function clear_param_windows() {
 function populate_param_windows() {
 	clear_param_windows();
 
-	for (p of params) {
-		p_pair = p.split(' ');
+	for (var p of params) {
+		var p_pair = p.split(' ');
 		var val = document.createElement('a');
 		val.className = "param";
 		val.title = p;
@@ -111,7 +113,7 @@ function create_filter_window(selected) {
 
 	// create selection menu
 	var param_texts = [];
-	for (p of params) param_texts.push(p.split(' ')[0]);
+	for (var p of params) param_texts.push(p.split(' ')[0]);
 	var select_param = create_selection(param_texts, params, "--- parameters ---", false);
 	select_param.className = "filter_param";
 	select_param.addEventListener('change', query_param, false);
@@ -403,7 +405,7 @@ function create_selection(texts, values, prompt_text, multiple) {
 function create_task_query() {
 	if (!task_cached) {
 		var qs = ["db=", database, '&'];
-		for (task of tasks) 
+		for (var task of tasks) 
 			qs.push("t=",encodeURIComponent(task),"&");	
 		if (qs.length > 0) 
 			qs.pop();	// chop last & (mostly harmless)
@@ -424,7 +426,7 @@ function create_data_query() {
 
 	var sel_bar = document.getElementById('selection_bar');
 
-	filters = sel_bar.getElementsByClassName('filter');
+	var filters = sel_bar.getElementsByClassName('filter');
 	for (var f = 0, len = filters.length; f < len; ++f) {
 		var filter = parse_filter(filters[f]);		
 		report_debug(filter);
