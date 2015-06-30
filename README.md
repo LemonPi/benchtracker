@@ -4,7 +4,11 @@ A collection of chained tools are provided to create multiple entry points for d
 Your project can enter and exit at any point!
 
 # Get started
-(TODO, configure benchtracker into python package and allow people to pip install it)
+ 1. clone to somewhere easily accessible `git clone https://github.com/LemonPi/benchtracker.git`
+ 2. decide what points your application enters and exits the [benchtracker flow](#flow)
+  - [OPTIONAL] create your first task directory and define the task with a [config file](#config_file)
+  - [OPTIONAL] outline what parameters you want to track in a [parse file](#parse_file)
+ 3. run the task over time, creating a <run#> directory each time
 
 # Example usage (VTR)
 ### Basic
@@ -232,6 +236,7 @@ then a different line will be produced for each distinct value of that parameter
 # Tools
 Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow (pictured below), see command line help for detailed usage of each tool.  
 
+<a name="flow"> </a>
 ![toolchain-flow](photos/flow.png)
 
 Listed in order that they should be run:
