@@ -4,7 +4,11 @@ A collection of chained tools are provided to create multiple entry points for d
 Your project can enter and exit at any point!
 
 # Get started
-(TODO, configure benchtracker into python package and allow people to pip install it)
+ 1. clone to somewhere easily accessible `git clone https://github.com/LemonPi/benchtracker.git`
+ 2. decide what points your application enters and exits the [benchtracker flow](#flow)
+  - [OPTIONAL] create your first task directory and define the task with a [config file](#config_file)
+  - [OPTIONAL] outline what parameters you want to track in a [parse file](#parse_file)
+ 3. run the task over time, creating a <run#> directory each time
 
 # Example usage (VTR)
 ### Basic
@@ -14,11 +18,15 @@ A VTR user first runs the task, parses it, then populates the database with it:
 ```
 bash$ cd ~/vtr/vtr_flow/scripts/
 scripts$ ./run_vtr_task.pl checkin_reg
-scripts$ ./parse_vtr_task.pl check_reg
+scripts$ ./parse_vtr_task.pl checkin_reg
 scripts$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit
 ```
+`populate_db.py` arguments:
+ 1. `~/vtr/vtr_flow/tasks/checkin_reg` required positional argument to the task directory
+ 2. `-k arch circuit` key parameters that uniquely define a VTR benchmark
+ 
 VTR has its own `run_task` and `parse_task` scripts, so it enters benchtracker at the `populate_db` stage.
-`checkin_reg` is the name of the task to task, and it exists as a folder shown below:
+`checkin_reg` is the name of the task to sweep benchmarks over, and it exists as a folder shown below:
 ```
 vtr_flow
     tasks
@@ -31,8 +39,6 @@ vtr_flow
             ...
 ```
 
-Each VTR benchmark is uniquely defined by its combination of architecture (`arch`) and circuit.
-
 ### Calling parse script
 A more advanced and safer usage would be to let `populate_db` call the parse script for the runs
 that are not parsed yet:
@@ -42,7 +48,12 @@ bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch cir
 "~/vtr/vtr_flow/scripts/parse_vtr_task.pl {task_dir} -run {run_number}"</b>
 </pre>
 
-Where the called script is able to receive information about the task and run via reflection in `{task_dir}` and `{run_number}`.
+The command string following the `-s` option:
+ 1. The first item is the script to execute, given such that the shell can find it
+ 2. Arguments to pass to the script, custom for whichever script was run
+ 3. `{task_dir}` is replaced in the call with `~/vtr/vtr_flow/tasks/checkin_reg`
+ 4. `{run_number}` would be replaced with whichever run does not have a parsed results file
+ 5. `{task_name}` is also available for substitution, `checkin_reg` in this case
 
 ### Using task list
 A task list (file with name of tasks on separate lines) can be used:
@@ -52,9 +63,38 @@ bash$ ~/benchtracker/populate_db.py regression_tests/vtr_reg_strong/task_list.tx
 ~/vtr/vtr_flow/tasks/</b> -k arch circuit -s "~/vtr/vtr_flow/scripts/parse_vtr_task.pl {task_dir} -run {run_number}" 
 </pre>
 
-Specifying the root directory is necessary here since the tasks listed in the `task_list.txt` are relative
-paths from `~/vtr/vtr_flow/tasks/`. Specifying the root directory also means the input task list is specified
-relative to it. Otherwise, the commands, such as the parse script, remain the same.
+Whether a task list or a task directory is given depends on if the given path points to a file or a directory.
+`--root_directory` expands all task names in the list with the `~/vtr/vtr_flow/tasks/` prefix. This is
+necessary here because the tasks listed in the `task_list.txt` are relative paths from `~/vtr/vtr_flow/tasks/`. 
+A consequence of defining `--root_directory` is that the task list name must also be relative to the root directory. 
+This is not necessary if the tasks in the list are absolute paths.
+
+The other commands, such as the parse script, remain the same.
+
+
+## Serving database
+Now that the database is populated, the VTR user should host the database so that the online
+viewer can be used to visualize the data and for other users to see.
+Serving locally is as simple as a call to
+```
+bash$ ~/benchtracker/server_db.py
+```
+This is fine if your database is called `results.db` in the `~/benchtracker_data/` directory, and port 5000 is open.
+
+For some common command line options,
+```
+bash$ ~/benchtracker/server_db.py --root_directory ./ --database testing.db --port 8080
+```
+ - `--root_directory` tells the server where to find its databases (multiple databases can be served by the same server)
+ - `--database` gives the default database to serve if none are specified by the viewer; here it would be `./testing.db`
+ - `--port` specifies the port to listen for requests on; be wary of firewall rules on your system
+ 
+More options and their default values can be found by running `server_db` with `-h`.
+
+### Production serving
+The server is configured to serve in production by default, with it's URL being the IP address of your machine
+and the port to listen on. It can be put into debug mode by
+changing `server_db.py`'s last line to `app.run(debug=True, port=port)`.
 
 ### Specifying database
 The syntax for specifying database is the same for `populate_db` and `server_db`:
@@ -62,27 +102,10 @@ The syntax for specifying database is the same for `populate_db` and `server_db`
 bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch circuit <b>-d ~/benchdata/testing.db</b>
 bash$ ~/benchtracker/server_db.py <b>-d ~/benchdata/testing.db</b>
 </pre>
-
-## Serving database
-Serving locally is as simple as a call to
-```
-bash$ ~/benchtracker/server_db.py
-```
-This is fine if your database is called `results.db` in the directory the script was run, and port 5000 is open.
-
-For more fine tuning,
-```
-bash$ ~/benchtracker/server_db.py --database ~/benchdata/results.db --port 8080
-```
-Commandline options and their default values can be found by running `server_db` with `-h`.
-
-### Production serving
-The server is configured in debug mode by default, and can be changed to release mode by
-changing `server_db.py`'s last line to `app.run(host='0.0.0.0', port=port)`.
-The server is then found under the IP address of your machine.
+For `populate_db` this is the database to put data in while for `server_db` this is the default database to host if none are specified.
 
 ## Viewing database
-Assuming `server_db` is running on port 5000 and has a valid database, the viewer can be 
+While `server_db` is running, assuming on port 5000 and has a valid database, the viewer can be 
 reached at 
 ```
 http://localhost:5000/view
@@ -99,8 +122,16 @@ The minimum selection for a full query is 1 task, x parameter, and y parameter s
 with the output options on the dividing row available:
 ![output_options](photos/divider_options.png)
 
-The data can be visualized by generating interactive plots, or downloaded as csv files.
-The current selection is saved in query string format by the third button.
+
+## Retrieving data
+The viewer under `/view` allows you to select a portion of the stored data for further processing.
+The current selection can be saved and shared by clicking `Get query string`, which is shared by all processing options.
+The processing options include:
+ - Generating plots inside `/view?[query_string]` for visualization
+ - Saving plots as SVG and PNG after generating them by clicking `Save plots (png and svg)`
+ - Downloading raw data in CSV format under `/csv?[query_string]`
+ - Downloading raw data in JSON format under `/data?[query_string]`
+
 
 ## Plot
 The plotter is designed to support basic and advanvced usage. 
@@ -205,6 +236,7 @@ then a different line will be produced for each distinct value of that parameter
 # Tools
 Each tool has usage information and additional options found by running them with `-h`. **It is highly recommended those be consulted**. The documentation here will only present the overall flow (pictured below), see command line help for detailed usage of each tool.  
 
+<a name="flow"> </a>
 ![toolchain-flow](photos/flow.png)
 
 Listed in order that they should be run:
@@ -317,9 +349,3 @@ Each item on every line should end in a tab. This includes the last element.
 The first line is the header with all the parameter names.
 N lines follow, where N=number of benchmarks for that task. 
 On each line is the value of each parameter for that benchmark.
-
-
-<a name="public_hosting"> </a>
-# Public Hosting Instructions
-At the bottom of `server_db.py`, change the call of the run() method to:
-`app.run(host='0.0.0.0')` for the server to be visible via your machine's public IP.
