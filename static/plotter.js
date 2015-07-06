@@ -97,6 +97,8 @@ function plotter_setup(data) {
         report_error(data.status);
         return;
     }
+    console.log('--- data ---');
+    console.log(data);
     // initialize
     raw_data = data;
     raw_data.tasks = _.map(raw_data.tasks, function(d){return d.split('|')[0]; });
@@ -126,7 +128,6 @@ function plotter_setup(data) {
     } else {
         // choose the axis with the most distinct values and overlay on it
         defaultToGmeanSubPlot();
-        //generate_overlay_selector('raw');
     }
 }
 /*
@@ -295,6 +296,10 @@ function generate_overlay_selector() {
         formGmean.appendChild(input);
         formGmean.appendChild(label);
         formGmean.appendChild(document.createElement('br'));
+        if (raw_data.params[0] == 'parsed_date' && choice[i] == 'run') {
+            $('#gip-'+choice[i]).prop('checked', true);
+        }
+
     }
 
     function updateLegendCheckBox(gid) {
