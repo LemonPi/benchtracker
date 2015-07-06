@@ -32,6 +32,8 @@ var xNameMap = null;
 
 var formGmean;
 var formOverlay;
+
+var first_plot = false;
 // all margins are the margins between canvsvg and canvsvg -> rect
 // not between the canvsvg and canvsvg -> g
 var ratio = {canvToWholeWid: 1060/(1060+260),
@@ -135,6 +137,7 @@ function plotter_setup(data) {
  * methodology: gmean over everything
  */
 function defaultToGmeanTimePlot() {
+    first_plot = true;
     d3.select('#chart').html('');
     // flattenedData = _.flatten(raw_data, true);
     for (var i = 0; i < raw_data.data.length; i++) {
@@ -161,6 +164,7 @@ function defaultToGmeanTimePlot() {
  * methodology: gmean over circuits, overlay on the filter which has the most distinct values
  */
 function defaultToGmeanSubPlot() {
+    first_plot = true;
     // check if circuit is in the filter: 
     // it should be, cuz it is the primary key
     var gmeanIndex = raw_data.params.indexOf(defaultGmean);
@@ -398,6 +402,7 @@ function findMostExpensiveAxis(rawData, params) {
  * this function is called after user is in the 'customer plot' mode
  */
 function plot_generator() {
+    first_plot = true;
     // clear up
     d3.select('#chart').html('');
     var series = raw_data.data;
@@ -481,6 +486,14 @@ function plot_generator() {
 
     // hide customization panel
     //custom_panel.style.visibility = 'hidden';
+}
+
+function scroll_to(element) {
+    console.log("Scrolling to:");
+    console.log(element);
+   $('html, body').animate({
+        scrollTop: $(element).offset().top - 200
+    }, 1000); 
 }
 
 function sizingTaskContainer (numPlots, id) {
@@ -934,6 +947,11 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
           zoomed();
         };
       });
+    }
+
+    if (first_plot) {
+        scroll_to(svg.node());
+        first_plot = false;
     }
 }
 // ..............
