@@ -71,13 +71,13 @@ function populate_param_windows() {
 	clear_param_windows();
 
 	for (var p of params) {
-		var p_pair = p.split(' ');
+		var type_separator_index = p.lastIndexOf(" ");
 		var val = document.createElement('a');
 		val.className = "param";
 		val.title = p;
-		val.text = p_pair[0];
-
-		if (p_pair[1] !== "TEXT") {
+		val.text = p.substring(0, type_separator_index);
+		var p_type = p.substring(type_separator_index+1);
+		if (p_type !== "TEXT") {
 			var val_y = val.cloneNode(true);
 			val_y.addEventListener('click', function(e) {
 				e.preventDefault();
@@ -117,7 +117,7 @@ function create_filter_window(selected) {
 
 	// create selection menu
 	var param_texts = [];
-	for (var p of params) param_texts.push(p.split(' ')[0]);
+	for (var p of params) param_texts.push(p.substring(0, p.lastIndexOf(" ")));
 	var select_param = create_selection(param_texts, params, "--- parameters ---", false);
 	select_param.className = "filter_param";
 	select_param.addEventListener('change', query_param, false);

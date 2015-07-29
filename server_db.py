@@ -10,6 +10,7 @@ import textwrap
 import functools    # need to wrap own decorators to comply with flask views
 import zipfile
 from io import BytesIO
+from util import strip_last_word, sql_escape
 try:
     from flask.ext.cors import CORS  # The typical way to import flask-cors
 except ImportError:
@@ -75,6 +76,7 @@ def parse_args(ns=None):
     root_directory = os.path.expanduser(params.root_directory)
     database = os.path.expanduser(params.database)
     port = params.port
+    print("serving: {}".format(real_db(database)))
     return params
 
 
@@ -99,7 +101,7 @@ def catch_operation_errors(func):
 @catch_operation_errors
 def get_tasks():
     database = parse_db()
-    return jsonify({'tasks':d.list_tasks(database), 'database':database})
+    return jsonify({'tasks':d.list_tasks(real_db(database)), 'database':database})
 
 @app.route('/db', methods=['GET'])
 def get_database():
@@ -138,7 +140,7 @@ def get_filtered_data():
     if exception:
         return payload
     else:
-        (databaes, tasks, params, data) = payload
+        (database, tasks, params, data) = payload
         return jsonify({'status': 'OK', 
             'database':database,
             'tasks':tasks, 
@@ -173,7 +175,6 @@ def get_csv_data():
 @catch_operation_errors
 def get_view():
     database = parse_db()
-    print(real_db(database))
     tasks = {task_name: task_context for (task_name, task_context) in [t.split('|',1) for t in d.list_tasks(real_db(database))]}
     queried_tasks = parse_tasks()
     x = y = filters = ""
@@ -243,7 +244,7 @@ def parse_filters(verbose=False):
             if verbose:
                 filter_param = arg[1]
             else:
-                filter_param = arg[1].split()[0]
+                filter_param = sql_escape(strip_last_word(arg[1]))
 
         if arg[0] == 'fm':
             filter_method = arg[1]
@@ -273,8 +274,6 @@ def parse_data():
         return (True, jsonify({'status': 'Missing x parameter!'})) 
     if not y_param:
         return (True, jsonify({'status': 'Missing y parameter!'})) 
-    x_param = x_param.split()[0]
-    y_param = y_param.split()[0]
 
     try:
         (filtered_params, filters) = parse_filters()

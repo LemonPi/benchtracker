@@ -38,6 +38,12 @@ def get_trailing_num(s):
     match = re.search(r'\d+$', s)
     return int(match.group()) if match else None
 
+def sql_escape(s):
+    return '\"' + s + '\"'
+
+def strip_last_word(s):
+    return s.rsplit(' ', 1)[0]
+
 def is_type_of(s, convert):
     try:
         convert(s)

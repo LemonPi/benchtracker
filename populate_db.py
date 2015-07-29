@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# given a task directory, put all new runs (relative to the latest one in the database)
+# into a database
+
 from __future__ import print_function, division
 import sys
 from subprocess import call
@@ -8,6 +11,7 @@ import shlex
 import argparse
 import textwrap
 import sqlite3
+import csv
 import socket   # for hostname
 import getpass  # for username
 from util import (walk_runs, get_trailing_num, get_result_file, 
@@ -25,6 +29,7 @@ def main():
     # operate on database
     db = sqlite3.connect(params.database)
     db.row_factory = sqlite3.Row
+    print("working on: {}".format(params.database))
 
     while params.task_dir:
         if (params.clean):
@@ -84,33 +89,39 @@ def update_db(params, db):
         params.last_run += 1
         print("run {} added ({}) ({})".format(run_number, params.last_run, parsed_date))
 
-        with open(resfilename, 'r') as res:
+        with open(resfilename, 'rb') as res:
             # make sure table is compatible with run data by inserting any new columns
             # always called "run" in table (converted from whatever prefix users use)
+            csvreader = csv.reader(res, delimiter=params.delimiter)
             result_params = ["run", "parsed_date"]
-            result_params.extend(res.readline().split('\t'))
-            if result_params[-1] == '\n':
+            result_params.extend(csvreader.next())
+            empty_end = False
+            if not result_params[-1]:   # empty or None
+                empty_end = True
                 result_params.pop()
             result_params = ["".join(('\"',p.strip(),'\"')) for p in result_params]
+            print(result_params)
 
-            pre_sample_pos = res.tell()
-            result_params_sample = res.readline().split('\t')
-            # go back to presample location for normal line iteration
-            res.seek(pre_sample_pos, os.SEEK_SET)
+            result_params_sample = [params.last_run, parsed_date]
+            result_params_sample.extend(csvreader.next())
+            if empty_end:
+                result_params_sample.pop()
+            while len(result_params_sample) < len(result_params):
+                result_params_sample.append('')
 
             # add new column to table
             for c in range(len(result_params)):
                 if result_params[c] not in params.tracked_columns:
                     print("ADDING {} as new column".format(result_params[c]))
-                    add_column_to_table(params, db, result_params[c], result_params_sample[c-2]) # -2 accounts for run and parsed date
+                    add_column_to_table(params, db, result_params[c], result_params_sample[c])
 
             # add value rows
-            rows_to_add = []
-            for line in res:
+            rows_to_add = [tuple(convert_strictest(param) if param != nullval else None for param in result_params_sample)]
+            for line in csvreader:
                 # run number and parsed_date are always recorded
                 result_params_val = [params.last_run, parsed_date]
-                result_params_val.extend(line.split('\t'))
-                if result_params_val[-1] == '\n':
+                result_params_val.extend(line)
+                if empty_end:
                     result_params_val.pop()
                 # something must be wrong here
                 if len(result_params_val) > len(result_params):
@@ -120,12 +131,14 @@ def update_db(params, db):
                     params.last_run -= 1
                     return
 
-                # for when the last column value is the empty string
+                # for padding when columns have unequal depth
                 while len(result_params_val) < len(result_params):
                     result_params_val.append('')
 
                 rows_to_add.append(tuple(convert_strictest(param) if param != nullval else None for param in result_params_val))
 
+            print("rows to add")
+            print(rows_to_add)
             param_placeholders = ("?,"*len(result_params)).rstrip(',')
             # specify columns to insert into since ordering of columns in file may not match table
             insert_rows_command = "INSERT OR IGNORE INTO {} ({}) VALUES ({})".format(
@@ -147,9 +160,14 @@ def drop_table(params, db):
 
 def create_table(params, db, task_table_name):
     # creates table schema based on the result file of run 1
-    with open(get_result_file(params, params.run_prefix + "1"), 'r') as res:
-        result_params = res.readline().rstrip().split('\t')
-        result_params_sample = res.readline().rstrip().split('\t')
+    with open(get_result_file(params, params.run_prefix + "1"), 'rb') as res:
+        csvreader = csv.reader(res, delimiter=params.delimiter)
+        result_params = csvreader.next()
+        result_params_sample = csvreader.next()
+        # empty end
+        if not result_params[-1]:
+            result_params.pop()
+            result_params_sample.pop()
         while len(result_params_sample) < len(result_params):
             result_params_sample.append('')
 
@@ -204,8 +222,7 @@ def initialize_tracked_columns(params, db):
     for info in column_info:
         column_names.add('\"' + info[1] + '\"')
     setattr(params, 'tracked_columns', column_names)
-    # print('tracked params: ', end='')
-    # print(params.tracked_columns)
+
 
 
 
@@ -240,6 +257,9 @@ def parse_args(ns=None):
     parser.add_argument("-f", "--result_file", 
             default="parse_results.txt",
             help="result file to look for inside each run; default: %(default)s")
+    parser.add_argument("--delimiter",
+            default='\t',
+            help="separating character between parameters in the result_file; default: %(default)s")
     parser.add_argument("-p", "--run_prefix", 
             default="run",
             help="prefix of run directories under the task directory; default: %(default)s")
@@ -249,7 +269,7 @@ def parse_args(ns=None):
                 use {run_number} and {task_name} to retrieve run information;\
                 default: %(default)s")
     parser.add_argument("-d", "--database",
-            default="results.db",
+            default="~/benchtracker_data/results.db",
             help="name of database to store results in; default: %(default)s")
     parser.add_argument("--clean",
             action='store_true',

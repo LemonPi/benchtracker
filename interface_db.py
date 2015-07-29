@@ -10,6 +10,7 @@ import argparse
 import textwrap
 import csv
 import StringIO
+from util import sql_escape, strip_last_word
 
 def list_tasks(dbname = "results.db"):
     """Return a list of all task names in a database"""
@@ -52,7 +53,9 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
     db = connect_db(dbname)
     data = []
 
-    cols_to_select = [x_param.split()[0], y_param.split()[0]]
+    # exclude last word, which is the type; the name may have multiple words in it
+    cols_to_select = [sql_escape(strip_last_word(x_param)), sql_escape(strip_last_word(y_param))]
+    print("cols to select:",cols_to_select)
 
     # always pass shared primary key information (they define a distinct benchmark)
     primary_keys = []
@@ -146,7 +149,9 @@ def describe_param(param, mode, tasks, dbname = "results.db"):
     db = connect_db(dbname)
     cursor = db.cursor()
 
-    (param_name, param_type) = param.split()
+    param_pair = param.rsplit(' ', 1)
+    param_name = sql_escape(param_pair[0])
+    param_type = param_pair[1]
     if param_type == "TEXT":
         mode = 'categorical'
     elif mode not in {'categorical', 'range'}:
