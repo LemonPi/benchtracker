@@ -43,9 +43,12 @@ if not app.debug:
 
 cors = CORS(app)
 port = 5000
-database = None
-root_directory = None
 
+root_directory = None
+# a set of valid names that the user is allowed to query for using db=
+valid_databases = set()
+# default database is the first database given
+default_database = None
 
 
 def parse_args(ns=None):
@@ -61,22 +64,35 @@ def parse_args(ns=None):
             that are commonly run together."""),
             usage="%(prog)s [OPTIONS]")
 
-    parser.add_argument("-d", "--database",
-            default="results.db",
-            help="name of database to store results in; default: %(default)s")
+    parser.add_argument("-d", "--databases",
+            nargs='+',
+            default=["results.db"],
+            help="names of databases in root directory to serve; users will\
+            only be allowed to query for these; The first specified will\
+            be the default; default: %(default)s")
     parser.add_argument("-r", "--root_directory",
             default="~/benchtracker_data/",
-            help="name of the directory to store databases in; default: %(default)s")
+            help="name of the directory to store databases in; if given,\
+            will allow users to query any database in the directory using\
+            the db query string parameter. default: %(default)s")
     parser.add_argument("-p", "--port",
             default=5000,
             type=int,
             help="port number to listen on; default: %(default)s")
     params = parser.parse_args(namespace=ns)
-    global database, port, root_directory
+    global default_database, valid_databases, port, root_directory
     root_directory = os.path.expanduser(params.root_directory)
-    database = os.path.expanduser(params.database)
+    # sanitize given databases to make sure they exist
+    for db in params.databases:
+        if os.path.isfile(os.path.join(root_directory, db)):
+            if not default_database:
+                default_database = db
+            valid_databases.add(db)
+        else:
+            print("WARNING: {} does not exist under {}".format(db, root_directory))
+
     port = params.port
-    print("serving: {}".format(real_db(database)))
+    print("serving: ", [real_db(db) for db in valid_databases])
     return params
 
 
@@ -206,12 +222,17 @@ def real_db(relative_db):
 # should always be run before all other querying since it determines where to look from
 def parse_db():
     db = request.args.get('db')
+    # sanitize against valid databases
     if db:
-        return db
-    # default to the global database
-    return database
+        if db in valid_databases:
+            return db
+        else:
+            raise IOError(db)
+    # default to the first database given if none given
+    return default_database
 
 def parse_tasks():
+    database = parse_db()
     tasks = request.args.getlist('t')
     if tasks and tasks[0].isdigit():
         all_tasks = d.list_tasks(database)
