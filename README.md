@@ -48,7 +48,7 @@ bash$ ~/benchtracker/populate_db.py ~/vtr/vtr_flow/tasks/checkin_reg -k arch cir
 "~/vtr/vtr_flow/scripts/parse_vtr_task.pl {task_dir} -run {run_number}"</b>
 </pre>
 
-The command string following the `-s` option:
+The command string following the `-s` option (leave the {} enclosed values literally as above):
  1. The first item is the script to execute, given such that the shell can find it
  2. Arguments to pass to the script, custom for whichever script was run
  3. `{task_dir}` is replaced in the call with `~/vtr/vtr_flow/tasks/checkin_reg`
