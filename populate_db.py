@@ -159,8 +159,16 @@ def drop_table(params, db):
     cursor.execute("DROP TABLE IF EXISTS {}".format(params.task_table_name))
 
 def create_table(params, db, task_table_name):
-    # creates table schema based on the result file of run 1
-    with open(get_result_file(params, params.run_prefix + "1"), 'rb') as res:
+    runs = [run for run in immediate_subdir(params.task_dir) if run.startswith(params.run_prefix)]
+    # select how to and which runs to use for a certain range
+    natural_sort(runs)
+
+    if len(runs) < 1:
+        print("No runs in this directory, cannot create table");
+        sys.exit(2)
+
+    # creates table schema based on the result file of the first run
+    with open(get_result_file(params, runs[0]), 'rb') as res:
         csvreader = csv.reader(res, delimiter=params.delimiter)
         result_params = csvreader.next()
         result_params_sample = csvreader.next()
