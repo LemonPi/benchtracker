@@ -181,10 +181,10 @@ function defaultToGmeanSubPlot() {
     // it should be, cuz it is the primary key
     var gmeanIndex = raw_data.params.indexOf(defaultGmean);
     if (gmeanIndex == -1) {
-        alert('circuit (primary key) is not in the param list\nskip default plot');
+        // alert('circuit (primary key) is not in the param list\nskip default plot');
         generate_overlay_selector();
     } else if (gmeanIndex == 0 || gmeanIndex == 1) {
-        alert('circuit is in x y axis: \nskip default plot');
+        // alert('circuit is in x y axis: \nskip default plot');
         generate_overlay_selector();
     } else {
         for (var k in raw_data.data) {
