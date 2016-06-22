@@ -52,14 +52,23 @@ var ratio = {canvToWholeWid: 1060/(1060+260),
 // display option
 var numPlotsPerRow = 1;
 
+var scatterOn = false;
+
 // attach event listeners when ready
 $(document).ready(function() {
 
 var custom_panel = document.getElementById("custom_panel");
 
-var customize_plot = document.getElementById("customizePlot");
-customize_plot.addEventListener('click', function () {
-    generate_overlay_selector();
+// var customize_plot = document.getElementById("customizePlot");
+// customize_plot.addEventListener('click', function () {
+//     generate_overlay_selector();
+// }, false);
+
+var toggle_scatter = document.getElementById("toggle_scatter");
+toggle_scatter.addEventListener('click', function() {
+    scatterOn = !scatterOn;
+    // force redraw of plots
+    plot_generator();
 }, false);
 
 var save_plot = document.getElementById("savePlot");
@@ -115,7 +124,7 @@ function plotter_setup(data) {
     gmean_list = [];
     range = [];
     xNameMap = [];
-    document.getElementById('customizePlot').style.visibility = 'visible';
+    document.getElementById('toggle_scatter').style.visibility = 'visible';
     document.getElementById('savePlot').style.visibility = 'visible';
     document.getElementById('savePlotData').style.visibility = 'visible';
     d3.select('#generate_plot').html('');
@@ -850,12 +859,22 @@ function simple_plot(params, series, overlay_list, xNM, t, titleMode) {
                   .append('svg:rect').attr('fill', '#f0f0f0').attr('x', 0).attr('y', 0)
                   .attr('width', width).attr('height', height);
     var color = d3.scale.category10();
+
+    var lineStroke;
+    if (scatterOn) {
+        lineStroke = function() {return 'none';}
+    }
+    else {
+        // here each key is associated with a color --> for future legend
+        lineStroke = function() {return color(lineInfo[i]['key']);}
+    }
+
     for (var i in lineInfo){
         var svgg = svg.append('g').attr('clip-path', 'url(#clip)');
         svgg.append('svg:path').attr('fill', 'none')
             .datum(lineInfo[i]['values'])
             .attr('class', 'line').attr('d', lineGen)
-            .style('stroke', function() {return color(lineInfo[i]['key']);}); // here each key is associated with a color --> for future legend
+            .style('stroke', lineStroke); 
         svgg.selectAll('.dots')
             .data(lineInfo[i]['values']) 
             .enter()
