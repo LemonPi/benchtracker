@@ -301,6 +301,11 @@ function generate_overlay_selector() {
         var input = document.createElement('input');
         var label = document.createElement('label');
         input.type = 'checkbox';
+        // auto select to gmean across runs (rarely would you not do this)
+        if (choice[i] === "run") {
+            input.checked = true;
+        }
+
         label.textContent = input.value = choice[i];
         label.htmlFor = input.id = 'gip-' + choice[i];
         input.setAttribute('index', i - 2);
