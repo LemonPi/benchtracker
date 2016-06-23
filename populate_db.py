@@ -206,7 +206,7 @@ def create_table(params, db, task_table_name):
             if primary_key not in result_params:
                 print("{} does not exist in result file of run 1".format(primary_key))
                 sys.exit(3)
-            primary_keys += primary_key
+            primary_keys += "".join(('\"', primary_key, '\"'))
             primary_keys += ','
         primary_keys = primary_keys[:-1]  # remove trailing ,
         primary_keys += ')'
