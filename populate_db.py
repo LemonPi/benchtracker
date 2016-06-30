@@ -12,11 +12,10 @@ import argparse
 import textwrap
 import sqlite3
 import csv
-import socket   # for hostname
-import getpass  # for username
+
 from util import (walk_runs, get_trailing_num, get_result_file, 
-    get_task_table_name, immediate_subdir, natural_sort,
-    is_int, is_float, convert_strictest)
+    get_task_table_name, get_base_name, natural_sort,
+    convert_strictest, get_runs)
 
 nullval = '-1'
 type_map = {int: "INT", float: "REAL", str: "TEXT"}
@@ -46,6 +45,12 @@ def main():
 
 def verify_paths(params):
     """verify paths exist as either relational or absolute paths, modifying them if necessary"""
+    # under one shot mode, only care about 1 result file
+    if params.one_shot:
+        if not os.path.isfile(params.result_file):
+            print(params.task_dir, " one_shot result file does not exist")
+        return
+    # normally want to check each run in the directory
     if os.path.isdir(params.task_dir):
         walk_runs(params, check_result_exists)
     else:
@@ -53,8 +58,7 @@ def verify_paths(params):
 
 def update_db(params, db):
     # check if table for task exists; if not then create it
-    task_table_name = params.task_table_name
-    create_table(params, db, task_table_name)
+    create_table(params, db)
     # load up latest run and parsed date for task
     def check_last_runs_table(runs):
         natural_sort(runs)
@@ -158,8 +162,8 @@ def drop_table(params, db):
     cursor = db.cursor()
     cursor.execute("DROP TABLE IF EXISTS {}".format(params.task_table_name))
 
-def create_table(params, db, task_table_name):
-    runs = [run for run in immediate_subdir(params.task_dir) if run.startswith(params.run_prefix)]
+def create_table(params, db):
+    runs = get_runs(params)
     # select how to and which runs to use for a certain range
     natural_sort(runs)
 
@@ -178,6 +182,8 @@ def create_table(params, db, task_table_name):
             result_params_sample.pop()
         while len(result_params_sample) < len(result_params):
             result_params_sample.append('')
+            
+        result_params = [param.strip() for param in result_params]
 
 
         # check if table name already exists
@@ -188,7 +194,7 @@ def create_table(params, db, task_table_name):
 
 
         # table identifiers cannot be parameterized, so have to use string concatenation
-        create_table_command = '''CREATE TABLE IF NOT EXISTS {}('''.format(task_table_name)
+        create_table_command = '''CREATE TABLE IF NOT EXISTS {}('''.format(params.task_table_name)
 
         # include one item for each result_params
         create_table_command += "{} INTEGER, ".format(params.run_prefix)
@@ -198,7 +204,6 @@ def create_table(params, db, task_table_name):
             p_schema = "".join(('\"',result_params[p].strip(),'\" ', type_map.get(type(convert_strictest(result_params_sample[p])), "TEXT")))
             p_schema += ", "
             create_table_command += p_schema
-
 
         # treat with unique keys
         primary_keys = "PRIMARY KEY({},".format(params.run_prefix) # run always considered primary key
@@ -256,7 +261,7 @@ def parse_args(ns=None):
 
     # arguments should either end with _dir or _file for use by other functions
     parser.add_argument("task_list", 
-            nargs='+',
+            nargs='*',
             default=[],
             help="directories (relative or absolute) holding runs")
     parser.add_argument("--root_directory",
@@ -279,14 +284,23 @@ def parse_args(ns=None):
     parser.add_argument("-d", "--database",
             default="~/benchtracker_data/results.db",
             help="name of database to store results in; default: %(default)s")
-    parser.add_argument("--clean",
-            action='store_true',
-            default=False,
-            help="clean (remove) the table for this task; exits afterwards")
     parser.add_argument("-k","--key_params", required=True,
             nargs='+',
             default=[],
             help="the combination of key parameters that defines a unique benchmark;")
+    # modes
+    parser.add_argument("--clean",
+            action='store_true',
+            default=False,
+            help="clean (remove) the table for this task; exits afterwards")
+    parser.add_argument("--one_shot",
+                        action="store_true",
+                        default=False,
+                        help="populate the database with a single results file,\
+                        ignoring any sort of task-run structure.\
+                        If set, then --result_file should be a path to the single\
+                        results file.")
+
     params = parser.parse_args(namespace=ns)
     params.database = os.path.expanduser(params.database)
     # initialize to -1 as everything valid must be greater than -1
@@ -298,11 +312,11 @@ def parse_args(ns=None):
             params.root_directory += '/'
         # make directory if it does not exist
         if not os.path.exists(params.root_directory):
-            os.makedirs(directory)
+            os.makedirs(params.root_directory)
         params.task_list = [params.root_directory + task for task in params.task_list]
 
-    if os.path.isfile(params.task_list[0]):
-        print("given task list")
+    if params.task_list and os.path.isfile(params.task_list[0]):
+        print("given task list (file where each line is a task)")
         task_list = []
         with open(params.task_list[0], 'r') as tl:
             for line in tl:
@@ -310,10 +324,18 @@ def parse_args(ns=None):
             params.task_list = task_list
 
     # load first task
-    load_next_task(params)
+    load_next_task(params, first_load=True)
     return params
 
-def load_next_task(params):
+def load_next_task(params, first_load=False):
+    # one shot configuration has different semantics
+    if first_load and params.one_shot:
+        setattr(params, 'task_dir', os.path.dirname(params.result_file))
+        setattr(params, 'task_name', get_base_name(params.result_file))
+        setattr(params, 'task_path', os.path.abspath(os.path.join(params.task_dir, os.pardir)))
+        setattr(params, 'task_table_name', get_task_table_name(params))
+        return
+    # finished task list
     if not params.task_list:
         setattr(params, 'task_dir', None)
         return

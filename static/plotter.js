@@ -36,6 +36,8 @@ var xNameMap = null;
 
 var formGmean;
 var formOverlay;
+// cached overlay selector choices so that if the choices are the same, we default to picking the same ones
+var prev_choices = null;
 
 var first_plot = false;
 // all margins are the margins between canvsvg and canvsvg -> rect
@@ -299,11 +301,15 @@ function remove_inputs(parent) {
     }
 }
 function generate_overlay_selector() {
+    var choice = raw_data.params;
+    // just ignore since we will use previous choices
+    if (prev_choices && choice.slice(2) == prev_choices.slice(2)) {
+        return;
+    } 
     // clear up
     remove_inputs(formGmean);
     remove_inputs(formOverlay);
     d3.select('#chart').html('');
-    var choice = raw_data.params;
 
     // choose gmean axis
     for (var i = 2; i < choice.length; i ++ ) {
@@ -358,6 +364,7 @@ function generate_overlay_selector() {
 
     // make selection pannel visible
     custom_panel.style.visibility = 'visible';
+    prev_choices = choice;
 }
 /*
  * if x is originally a int or float, this function does nothing

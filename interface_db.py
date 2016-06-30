@@ -10,7 +10,7 @@ import argparse
 import textwrap
 import csv
 import StringIO
-from util import sql_escape, strip_last_word
+from util import sql_escape, strip_quotes, strip_last_word
 
 def list_tasks(dbname = "results.db"):
     """Return a list of all task names in a database"""
@@ -65,8 +65,8 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
         else:
             primary_keys = intersection(primary_keys, retrieve_primary_keys(tasks[t], db))
     for key in primary_keys:
-        if key not in cols_to_select:
-            cols_to_select.append(key)
+        if sql_escape(key) not in cols_to_select:
+            cols_to_select.append(sql_escape(key))
 
     # also pass filter parameter value in
     for f in filters:
@@ -97,7 +97,7 @@ def retrieve_data(x_param, y_param, filters, tasks, dbname = "results.db"):
         cursor.execute(select_command, sql_val_args)
         data.append(tuple(tuple(row) for row in cursor.fetchall()));
         
-    return cols_to_select, data
+    return [strip_quotes(col) for col in cols_to_select], data
 
 def export_data_csv(selected_cols, data):
     """
