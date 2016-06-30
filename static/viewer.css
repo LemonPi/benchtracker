@@ -227,8 +227,19 @@ svg {
     stroke-width: 1.5px;
 }
 */
-.customizePlotContainer {}
 
+.active_mean_method {
+
+}
+.inactive_mean_method {
+	color: #80ccff;
+	cursor: pointer;
+}
+.inactive_mean_method:hover {
+	text-decoration: underline;
+}
+
+.customizePlotContainer {}
 
 @media screen and (-webkit-min-device-pixel-ratio:0) { 
 	.filter_param option, .filter_sel option {
